@@ -89,12 +89,44 @@ export default function Home() {
     });
   };
 
-  const handleAddTicker = (ticker: string) => {
-    if (MOCK_ETFS.find(e => e.id === ticker) || customEtfs.find(e => e.id === ticker)) return;
+  const handleAddTicker = async (ticker: string) => {
+    const cleanTicker = ticker.trim().toUpperCase();
+    if (MOCK_ETFS.find(e => e.id === cleanTicker) || customEtfs.find(e => e.id === cleanTicker)) return;
 
+    // Check if it's likely an ISIN (12 chars) or just a ticker that needs resolution
+    if (cleanTicker.length >= 10 || !cleanTicker.includes('.')) {
+      try {
+        const res = await fetch(`/api/market-data/search?query=${cleanTicker}`);
+        const result = await res.json();
+
+        if (result && result.ticker) {
+          if (MOCK_ETFS.find(e => e.id === result.ticker) || customEtfs.find(e => e.id === result.ticker)) {
+            console.log("Ticker already exists after resolution:", result.ticker);
+            return;
+          }
+
+          const newEtf: ETF = {
+            id: result.ticker,
+            name: result.name || result.ticker,
+            description: "Custom added asset",
+            price: 0,
+            previousPrice: 0,
+            changePercent: 0,
+            ytdChange: 0,
+            startOfYearPrice: 0
+          };
+          setCustomEtfs(prev => [...prev, newEtf]);
+          return;
+        }
+      } catch (e) {
+        console.error("Smart search failed, falling back to literal ticker:", e);
+      }
+    }
+
+    // Fallback: add as literal ticker if search failed or it's a short ticker
     const newEtf: ETF = {
-      id: ticker,
-      name: ticker, // Will be updated if real data comes in
+      id: cleanTicker,
+      name: cleanTicker,
       description: "Custom added asset",
       price: 0,
       previousPrice: 0,

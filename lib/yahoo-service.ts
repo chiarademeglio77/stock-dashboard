@@ -111,3 +111,24 @@ export async function fetchYahooQuotesBatch(tickers: string[]) {
         return [];
     }
 }
+
+export async function searchYahooTicker(query: string) {
+    try {
+        const result = await yahooFinance.search(query, {
+            quotesCount: 1,
+            newsCount: 0
+        });
+        if (result.quotes && result.quotes.length > 0) {
+            const bestMatch = result.quotes[0] as any;
+            return {
+                ticker: bestMatch.symbol,
+                name: bestMatch.longname || bestMatch.shortname || bestMatch.symbol,
+                type: bestMatch.quoteType
+            };
+        }
+        return null;
+    } catch (error) {
+        console.error(`Yahoo Search error for ${query}:`, error);
+        return null;
+    }
+}
