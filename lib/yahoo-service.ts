@@ -30,7 +30,7 @@ export const YAHOO_TICKER_MAP: Record<string, string> = {
 };
 
 export async function fetchYahooHistoricalData(ticker: string, periodDays: number = 365) {
-    const symbol = YAHOO_TICKER_MAP[ticker] || (ticker.includes('.') ? ticker : `${ticker}.MI`);
+    const symbol = YAHOO_TICKER_MAP[ticker] || ticker;
 
     const endDate = new Date();
     const startDate = new Date();
@@ -69,11 +69,12 @@ export async function fetchYahooHistoricalData(ticker: string, periodDays: numbe
 }
 
 export async function fetchYahooQuote(ticker: string) {
-    const symbol = YAHOO_TICKER_MAP[ticker] || (ticker.includes('.') ? ticker : `${ticker}.MI`);
+    const symbol = YAHOO_TICKER_MAP[ticker] || ticker;
     try {
         const quote = await yahooFinance.quote(symbol) as any;
         return {
             symbol: ticker,
+            name: quote.longName || quote.shortName || ticker,
             price: quote.regularMarketPrice,
             changePercent: quote.regularMarketChangePercent,
             volume: quote.regularMarketVolume,
@@ -99,6 +100,7 @@ export async function fetchYahooQuotesBatch(tickers: string[]) {
         const results = await yahooFinance.quote(symbols) as any[];
         return results.map(quote => ({
             symbol: reverseMap[quote.symbol] || quote.symbol,
+            name: quote.longName || quote.shortName || quote.symbol,
             price: quote.regularMarketPrice,
             change: quote.regularMarketChange,
             changePercent: quote.regularMarketChangePercent,

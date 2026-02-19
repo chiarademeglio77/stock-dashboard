@@ -11,6 +11,21 @@ import { MOCK_ETFS, ETF } from "@/lib/mock-etfs";
 import { ETFTable } from "@/components/ETFTable";
 import { PortfolioTable } from "@/components/PortfolioTable";
 
+const formatCurrency = (val: number) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+  }).format(val);
+};
+
+const formatNumber = (val: number) => {
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(val);
+};
+
 export default function Home() {
   const [selectedPeriod, setSelectedPeriod] = useState<number>(365);
   const [selectedETF, setSelectedETF] = useState<ETF>(MOCK_ETFS[0]);
@@ -20,6 +35,7 @@ export default function Home() {
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
   const [portfolio, setPortfolio] = useState<any[]>([]);
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
+  const [customEtfs, setCustomEtfs] = useState<ETF[]>([]);
 
   // Load selection and portfolio from localStorage
   useEffect(() => {
@@ -31,6 +47,9 @@ export default function Home() {
 
     const savedFilter = localStorage.getItem("show_pinned_only");
     if (savedFilter === "true") setShowPinnedOnly(true);
+
+    const savedCustom = localStorage.getItem("custom_tickers");
+    if (savedCustom) setCustomEtfs(JSON.parse(savedCustom));
   }, []);
 
   // Persist pinnedIds
@@ -48,6 +67,11 @@ export default function Home() {
     localStorage.setItem("show_pinned_only", showPinnedOnly.toString());
   }, [showPinnedOnly]);
 
+  // Persist custom tickers
+  useEffect(() => {
+    localStorage.setItem("custom_tickers", JSON.stringify(customEtfs));
+  }, [customEtfs]);
+
   const togglePin = (id: string) => {
     setPinnedIds(prev =>
       prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
@@ -56,14 +80,29 @@ export default function Home() {
     // Also add to portfolio if not there, up to 10 stocks
     setPortfolio(prev => {
       if (prev.find(p => p.id === id)) {
-        // If unpinning, we might want to keep it in portfolio or remove it. 
-        // User said "choose titles for the table", let's keep pin and portfolio synced for simplicity.
         return prev.filter(p => p.id !== id);
       } else {
         if (prev.length >= 10) return prev; // Limit to 10
-        return [...prev, { id, quantity: 0, purchasePrice: 0 }];
+        // Find existing cost or default to 0
+        return [...prev, { id, quantity: 1, purchasePrice: 0 }];
       }
     });
+  };
+
+  const handleAddTicker = (ticker: string) => {
+    if (MOCK_ETFS.find(e => e.id === ticker) || customEtfs.find(e => e.id === ticker)) return;
+
+    const newEtf: ETF = {
+      id: ticker,
+      name: ticker, // Will be updated if real data comes in
+      description: "Custom added asset",
+      price: 0,
+      previousPrice: 0,
+      changePercent: 0,
+      ytdChange: 0,
+      startOfYearPrice: 0
+    };
+    setCustomEtfs(prev => [...prev, newEtf]);
   };
 
   const updatePortfolioItem = (updated: any) => {
@@ -94,6 +133,20 @@ export default function Home() {
             return acc;
           }, {});
           setRealQuotes(quotesMap);
+
+          // Update customEtfs names if they are currently just the ticker
+          setCustomEtfs(prev => {
+            let changed = false;
+            const updated = prev.map(etf => {
+              const q = quotesMap[etf.id];
+              if (q && q.name && etf.name !== q.name) {
+                changed = true;
+                return { ...etf, name: q.name };
+              }
+              return etf;
+            });
+            return changed ? updated : prev;
+          });
         } else {
           console.warn("Batch quotes API did not return an array:", quotes);
         }
@@ -209,12 +262,12 @@ export default function Home() {
     return {
       ticker: selectedETF.id,
       name: selectedETF.name,
-      price: displayPrice.toFixed(2),
+      price: formatCurrency(displayPrice),
       priceChange,
-      volume: (realQuote?.volume || current.volume).toLocaleString(),
+      volume: formatNumber(realQuote?.volume || current.volume),
       volChange,
-      high: (realQuote?.high || current.high || 0).toFixed(2),
-      low: (realQuote?.low || current.low || 0).toFixed(2),
+      high: formatCurrency(realQuote?.high || current.high || 0),
+      low: formatCurrency(realQuote?.low || current.low || 0),
     };
   }, [data, selectedETF, realQuotes]);
 
@@ -254,9 +307,12 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="h-[600px]">
+            <div className="h-[650px]">
               <ETFTable
-                etfs={showPinnedOnly ? MOCK_ETFS.filter(e => pinnedIds.includes(e.id)) : MOCK_ETFS}
+                etfs={showPinnedOnly
+                  ? [...MOCK_ETFS, ...customEtfs].filter(e => pinnedIds.includes(e.id))
+                  : [...MOCK_ETFS, ...customEtfs]
+                }
                 selectedId={selectedETF.id}
                 onSelect={(etf) => setSelectedETF(etf)}
                 realQuotes={realQuotes}
@@ -264,6 +320,7 @@ export default function Home() {
                 onTogglePin={togglePin}
                 showPinnedOnly={showPinnedOnly}
                 onToggleFilter={() => setShowPinnedOnly(!showPinnedOnly)}
+                onAddTicker={handleAddTicker}
               />
             </div>
           </div>
@@ -273,27 +330,27 @@ export default function Home() {
             {/* Asset Metrics Group */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
               <MetricsCard
-                title="Prezzo Attuale"
-                value={`€${currentMetrics?.price || "0.00"}`}
+                title="Market Price"
+                value={currentMetrics?.price || "€0.00"}
                 change={currentMetrics?.priceChange}
-                changeLabel="rispetto a ieri"
+                changeLabel="vs yesterday"
                 icon={<Activity className="h-4 w-4" />}
               />
               <MetricsCard
-                title="Volume 24h"
+                title="24h Volume"
                 value={currentMetrics?.volume || "0"}
                 change={currentMetrics?.volChange}
-                changeLabel="rispetto a ieri"
+                changeLabel="vs yesterday"
                 icon={<BarChart3 className="h-4 w-4" />}
               />
               <MetricsCard
-                title="Massimo 24h"
-                value={`€${currentMetrics?.high || "0.00"}`}
+                title="24h High"
+                value={currentMetrics?.high || "€0.00"}
                 icon={<TrendingUp className="h-4 w-4" />}
               />
               <MetricsCard
-                title="Minimo 24h"
-                value={`€${currentMetrics?.low || "0.00"}`}
+                title="24h Low"
+                value={currentMetrics?.low || "€0.00"}
                 icon={<Activity className="h-4 w-4" />}
               />
             </div>
@@ -345,9 +402,9 @@ export default function Home() {
             {/* Quick Stats Banner */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
               <div className="p-3 rounded-xl border bg-card/50">
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Tendenza</p>
+                <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Trend</p>
                 <p className={`text-md font-bold ${(data[data.length - 1]?.sma || 0) > (data[data.length - 1]?.ema || 0) ? "text-green-500" : "text-red-500"}`}>
-                  {(data[data.length - 1]?.sma || 0) > (data[data.length - 1]?.ema || 0) ? "RIALZISTA" : "RIBASSISTA"}
+                  {(data[data.length - 1]?.sma || 0) > (data[data.length - 1]?.ema || 0) ? "BULLISH" : "BEARISH"}
                 </p>
               </div>
               <div className="p-3 rounded-xl border bg-card/50">
@@ -355,7 +412,7 @@ export default function Home() {
                 <p className="text-md font-bold text-foreground">{(data[data.length - 1]?.stdDev || 0).toFixed(2)}</p>
               </div>
               <div className="p-3 rounded-xl border bg-card/50">
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Variaz. Indice</p>
+                <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Index Day Chg</p>
                 <p className={`text-xl font-bold ${selectedETF.changePercent >= 0 ? "text-green-500" : "text-red-500"}`}>
                   {selectedETF.changePercent >= 0 ? "+" : ""}{selectedETF.changePercent.toFixed(2)}%
                 </p>
@@ -370,7 +427,7 @@ export default function Home() {
 
             {/* Phase 2: Portfolio Component */}
             <PortfolioTable
-              etfs={MOCK_ETFS}
+              etfs={[...MOCK_ETFS, ...customEtfs]}
               realQuotes={realQuotes}
               portfolio={portfolio}
               onUpdateItem={updatePortfolioItem}

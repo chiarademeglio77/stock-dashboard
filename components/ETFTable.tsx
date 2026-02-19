@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ETF } from "@/lib/mock-etfs";
 import { ArrowUp, ArrowDown, Star } from "lucide-react";
 
@@ -12,6 +13,7 @@ interface ETFTableProps {
     onTogglePin?: (id: string) => void;
     showPinnedOnly?: boolean;
     onToggleFilter?: () => void;
+    onAddTicker?: (ticker: string) => void;
 }
 
 function ChangeCell({ value }: { value: number }) {
@@ -24,22 +26,67 @@ function ChangeCell({ value }: { value: number }) {
     );
 }
 
-export function ETFTable({ etfs, selectedId, onSelect, realQuotes, pinnedIds, onTogglePin, showPinnedOnly, onToggleFilter }: ETFTableProps) {
+const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "EUR",
+        minimumFractionDigits: 2,
+    }).format(val);
+};
+
+export function ETFTable({ etfs, selectedId, onSelect, realQuotes, pinnedIds, onTogglePin, showPinnedOnly, onToggleFilter, onAddTicker }: ETFTableProps) {
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isSearching, setIsSearching] = useState(false);
+
+    const handleSearch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!searchQuery) return;
+
+        setIsSearching(true);
+        // We'll pass this up to a new prop onAddTicker if we want Home to handle it
+        // For now, let's assume page.tsx will provide onAddTicker
+    };
+
     return (
         <div className="bg-card rounded-xl border shadow-sm flex flex-col h-full overflow-hidden">
-            <div className="px-6 py-4 border-b flex-shrink-0 flex justify-between items-center">
-                <div>
-                    <h3 className="font-semibold text-lg">Market Assets</h3>
-                    <p className="text-sm text-muted-foreground">Select to analyze</p>
+            <div className="px-6 py-4 border-b flex-shrink-0 space-y-3">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h3 className="font-semibold text-lg">Market Assets</h3>
+                        <p className="text-sm text-muted-foreground">Select to analyze</p>
+                    </div>
+                    {pinnedIds && pinnedIds.length > 0 && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onToggleFilter?.(); }}
+                            className={`text-[10px] font-bold px-2 py-1 rounded border transition-colors ${showPinnedOnly ? "bg-primary text-primary-foreground border-primary" : "bg-transparent text-muted-foreground border-muted hover:border-primary"}`}
+                        >
+                            {showPinnedOnly ? "SHOW ALL" : "FAVORITES ONLY"}
+                        </button>
+                    )}
                 </div>
-                {pinnedIds && pinnedIds.length > 0 && (
+
+                {/* Search / Add Ticker Input */}
+                <form className="relative flex gap-2" onSubmit={(e) => {
+                    e.preventDefault();
+                    if (searchQuery) {
+                        onAddTicker?.(searchQuery.toUpperCase());
+                        setSearchQuery("");
+                    }
+                }}>
+                    <input
+                        type="text"
+                        placeholder="Add ticker (e.g. AAPL, BTC-USD)"
+                        className="flex-1 bg-muted/50 border-none rounded-lg px-3 py-2 text-xs focus:ring-1 ring-primary outline-none uppercase"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                     <button
-                        onClick={(e) => { e.stopPropagation(); onToggleFilter?.(); }}
-                        className={`text-[10px] font-bold px-2 py-1 rounded border transition-colors ${showPinnedOnly ? "bg-primary text-primary-foreground border-primary" : "bg-transparent text-muted-foreground border-muted hover:border-primary"}`}
+                        type="submit"
+                        className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-primary/90 transition-colors uppercase"
                     >
-                        {showPinnedOnly ? "MOSTRA TUTTI" : "SOLO PREFERITI"}
+                        Add
                     </button>
-                )}
+                </form>
             </div>
             <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted">
                 <table className="w-full text-sm">
@@ -49,8 +96,8 @@ export function ETFTable({ etfs, selectedId, onSelect, realQuotes, pinnedIds, on
                             <th className="text-left px-6 py-3 font-medium text-muted-foreground">Symbol</th>
                             <th className="text-left px-6 py-3 font-medium text-muted-foreground">Name</th>
                             <th className="text-right px-6 py-3 font-medium text-muted-foreground">Price</th>
-                            <th className="text-right px-6 py-3 font-medium text-muted-foreground">Daily Δ</th>
-                            <th className="text-right px-6 py-3 font-medium text-muted-foreground">YTD Δ</th>
+                            <th className="text-right px-6 py-3 font-medium text-muted-foreground">Day Chg</th>
+                            <th className="text-right px-6 py-3 font-medium text-muted-foreground">YTD Chg</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -80,11 +127,10 @@ export function ETFTable({ etfs, selectedId, onSelect, realQuotes, pinnedIds, on
                                     </td>
                                     <td className="px-6 py-3 font-mono font-bold text-primary">{etf.id}</td>
                                     <td className="px-6 py-3 text-foreground max-w-[200px]">
-                                        <div className="font-medium">{etf.name}</div>
-                                        <div className="text-xs text-muted-foreground truncate">{etf.description}</div>
+                                        <div className="font-medium text-xs leading-tight">{etf.name}</div>
                                     </td>
                                     <td className="px-6 py-3 text-right font-medium">
-                                        €{(price || 0).toFixed(2)}
+                                        {formatCurrency(price || 0)}
                                     </td>
                                     <td className="px-6 py-3">
                                         <div className="flex justify-end">
