@@ -31,11 +31,17 @@ export default function Home() {
       try {
         const response = await fetch('/api/market-data/batch');
         const quotes = await response.json();
-        const quotesMap = quotes.reduce((acc: any, q: any) => {
-          acc[q.symbol] = q;
-          return acc;
-        }, {});
-        setRealQuotes(quotesMap);
+
+        // Safety check: ensure 'quotes' is an array before calling reduce
+        if (Array.isArray(quotes)) {
+          const quotesMap = quotes.reduce((acc: any, q: any) => {
+            acc[q.symbol] = q;
+            return acc;
+          }, {});
+          setRealQuotes(quotesMap);
+        } else {
+          console.warn("Batch quotes API did not return an array:", quotes);
+        }
       } catch (err) {
         console.error("Failed to fetch batch quotes:", err);
       }
@@ -64,13 +70,18 @@ export default function Home() {
       const cached = localStorage.getItem(cacheKey);
 
       if (cached) {
-        const { timestamp, payload } = JSON.parse(cached);
-        // Cache valid for 1 hour for Yahoo Finance
-        if (Date.now() - timestamp < 1 * 60 * 60 * 1000) {
-          setData(payload);
-          setIsSimulation(false);
-          setLoading(false);
-          return;
+        try {
+          const { timestamp, payload } = JSON.parse(cached);
+          // Cache valid for 1 hour for Yahoo Finance
+          if (Date.now() - timestamp < 1 * 60 * 60 * 1000) {
+            setData(payload);
+            setIsSimulation(false);
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.error("Corrupted cache found, clearing:", e);
+          localStorage.removeItem(cacheKey);
         }
       }
 

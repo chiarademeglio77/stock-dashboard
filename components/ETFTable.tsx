@@ -42,7 +42,7 @@ export function ETFTable({ etfs, selectedId, onSelect, realQuotes }: ETFTablePro
                         {etfs.map((etf) => {
                             const realQuote = realQuotes?.[etf.id];
                             const price = realQuote?.price || etf.price;
-                            const change = realQuote?.changePercent || etf.changePercent;
+                            const change = typeof realQuote?.changePercent === 'number' ? realQuote.changePercent : etf.changePercent;
 
                             return (
                                 <tr
@@ -56,10 +56,12 @@ export function ETFTable({ etfs, selectedId, onSelect, realQuotes }: ETFTablePro
                                         <div className="font-medium">{etf.name}</div>
                                         <div className="text-xs text-muted-foreground truncate">{etf.description}</div>
                                     </td>
-                                    <td className="px-6 py-3 text-right font-medium">€{price.toFixed(2)}</td>
+                                    <td className="px-6 py-3 text-right font-medium">
+                                        €{(price || 0).toFixed(2)}
+                                    </td>
                                     <td className="px-6 py-3">
                                         <div className="flex justify-end">
-                                            <ChangeCell value={change} />
+                                            <ChangeCell value={change || 0} />
                                         </div>
                                     </td>
                                     <td className="px-6 py-3">
