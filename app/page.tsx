@@ -9,11 +9,66 @@ import { calculateSMA, calculateEMA, calculateStandardDeviation, AnalysisResult 
 import { TrendingUp, DollarSign, Activity, BarChart3 } from "lucide-react";
 import { MOCK_ETFS, ETF } from "@/lib/mock-etfs";
 import { ETFTable } from "@/components/ETFTable";
+import { PortfolioTable } from "@/components/PortfolioTable";
 
 export default function Home() {
   const [selectedPeriod, setSelectedPeriod] = useState<number>(365);
   const [selectedETF, setSelectedETF] = useState<ETF>(MOCK_ETFS[0]);
   const [zoomRange, setZoomRange] = useState<{ startIndex?: number; endIndex?: number }>({});
+
+  // Custom Selection & Portfolio State
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [portfolio, setPortfolio] = useState<any[]>([]);
+  const [showPinnedOnly, setShowPinnedOnly] = useState(false);
+
+  // Load selection and portfolio from localStorage
+  useEffect(() => {
+    const savedPinned = localStorage.getItem("pinned_tickers");
+    if (savedPinned) setPinnedIds(JSON.parse(savedPinned));
+
+    const savedPortfolio = localStorage.getItem("user_portfolio");
+    if (savedPortfolio) setPortfolio(JSON.parse(savedPortfolio));
+
+    const savedFilter = localStorage.getItem("show_pinned_only");
+    if (savedFilter === "true") setShowPinnedOnly(true);
+  }, []);
+
+  // Persist pinnedIds
+  useEffect(() => {
+    localStorage.setItem("pinned_tickers", JSON.stringify(pinnedIds));
+  }, [pinnedIds]);
+
+  // Persist portfolio
+  useEffect(() => {
+    localStorage.setItem("user_portfolio", JSON.stringify(portfolio));
+  }, [portfolio]);
+
+  // Persist filter
+  useEffect(() => {
+    localStorage.setItem("show_pinned_only", showPinnedOnly.toString());
+  }, [showPinnedOnly]);
+
+  const togglePin = (id: string) => {
+    setPinnedIds(prev =>
+      prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
+    );
+
+    // Also add to portfolio if not there, up to 10 stocks
+    setPortfolio(prev => {
+      if (prev.find(p => p.id === id)) {
+        // If unpinning, we might want to keep it in portfolio or remove it. 
+        // User said "choose titles for the table", let's keep pin and portfolio synced for simplicity.
+        return prev.filter(p => p.id !== id);
+      } else {
+        if (prev.length >= 10) return prev; // Limit to 10
+        return [...prev, { id, quantity: 0, purchasePrice: 0 }];
+      }
+    });
+  };
+
+  const updatePortfolioItem = (updated: any) => {
+    setPortfolio(prev => prev.map(p => p.id === updated.id ? updated : p));
+  };
 
   // Reset zoom ONLY when the total period changes
   useEffect(() => {
@@ -168,9 +223,9 @@ export default function Home() {
       <div className="space-y-6">
         {/* Layout split into two main columns */}
 
-        <div className="grid gap-6 lg:grid-cols-12 h-[calc(100vh-10rem)] items-stretch">
+        <div className="grid gap-6 lg:grid-cols-12 items-stretch">
           {/* Left Column: Currencies + ETF Table */}
-          <div className="lg:col-span-4 flex flex-col space-y-4 min-h-0">
+          <div className="lg:col-span-4 flex flex-col space-y-4">
             {/* Currency Metrics Group */}
             <div className="grid grid-cols-2 gap-4 flex-shrink-0">
               <div className="p-4 rounded-xl border bg-card shadow-sm">
@@ -199,18 +254,22 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex-1 min-h-0">
+            <div className="h-[600px]">
               <ETFTable
-                etfs={MOCK_ETFS}
+                etfs={showPinnedOnly ? MOCK_ETFS.filter(e => pinnedIds.includes(e.id)) : MOCK_ETFS}
                 selectedId={selectedETF.id}
                 onSelect={(etf) => setSelectedETF(etf)}
                 realQuotes={realQuotes}
+                pinnedIds={pinnedIds}
+                onTogglePin={togglePin}
+                showPinnedOnly={showPinnedOnly}
+                onToggleFilter={() => setShowPinnedOnly(!showPinnedOnly)}
               />
             </div>
           </div>
 
-          {/* Right Column: Asset Metrics + Chart + Statistics */}
-          <div className="lg:col-span-8 flex flex-col space-y-4 min-h-0">
+          {/* Right Column: Asset Metrics + Chart + Statistics + Portfolio */}
+          <div className="lg:col-span-8 flex flex-col space-y-4">
             {/* Asset Metrics Group */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
               <MetricsCard
@@ -239,7 +298,7 @@ export default function Home() {
               />
             </div>
 
-            <div className="bg-card rounded-xl border px-6 py-4 shadow-sm flex-1 flex flex-col min-h-0">
+            <div className="bg-card rounded-xl border px-6 py-4 shadow-sm h-[450px] flex flex-col">
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <h3 className="font-semibold text-lg leading-none mb-1">Analysis Console: {selectedETF.id}</h3>
@@ -308,6 +367,14 @@ export default function Home() {
                 </p>
               </div>
             </div>
+
+            {/* Phase 2: Portfolio Component */}
+            <PortfolioTable
+              etfs={MOCK_ETFS}
+              realQuotes={realQuotes}
+              portfolio={portfolio}
+              onUpdateItem={updatePortfolioItem}
+            />
           </div>
         </div>
       </div>

@@ -100,6 +100,7 @@ export async function fetchYahooQuotesBatch(tickers: string[]) {
         return results.map(quote => ({
             symbol: reverseMap[quote.symbol] || quote.symbol,
             price: quote.regularMarketPrice,
+            change: quote.regularMarketChange,
             changePercent: quote.regularMarketChangePercent,
             volume: quote.regularMarketVolume
         }));
