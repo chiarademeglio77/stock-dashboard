@@ -1,46 +1,47 @@
 # 📊 Historical Multi-Market Dashboard
 
-Un dashboard finanziario interattivo e moderno costruito con **Next.js**, che fornisce analisi in tempo reale e storiche per ETF e titoli quotati sulla **Borsa Italiana (Milano)**.
+An interactive and modern financial dashboard built with **Next.js**, providing real-time and historical analysis for ETFs and stocks listed on the **Borsa Italiana (Milan)**.
 
-![Versione 1.0](https://img.shields.io/badge/Version-1.0-blue)
+![Version 1.0](https://img.shields.io/badge/Version-1.0-blue)
 ![Next.js](https://img.shields.io/badge/Framework-Next.js-black)
 ![Tailwind CSS](https://img.shields.io/badge/Styling-TailwindCSS-38B2AC)
 ![Recharts](https://img.shields.io/badge/Charts-Recharts-FF6384)
 
-## ✨ Funzionalità
+## ✨ Features
 
-- **Dati Reali in Tempo Reale**: Integrazione con Yahoo Finance per quotazioni aggiornate e dati storici accurati.
-- **Analisi Tecnica Automatica**: Calcolo istantaneo di Medie Mobili Semplici (SMA), Esponenziali (EMA) e Deviazione Standard direttamente nel browser.
-- **Interfaccia Interattiva**: Grafici zoomabili con persistenza della selezione e gestione fluida dei periodi temporali (30d, 90d, 1y, Max).
-- **Focus Borsa Italiana**: Supporto completo per i ticker di Milano (es. `VUSA.MI`, `SWDA.MI`, `FTSEMIB.MI`) con prezzi visualizzati in **Euro (€)**.
-- **Performance & Caching**: Sistema di caching intelligente (1 ora) per ottimizzare il numero di richieste API e garantire velocità estrema.
+- **Real-Time Market Data**: Integrated with Yahoo Finance for up-to-date quotes and accurate historical data.
+- **Automatic Technical Analysis**: Instant calculation of Simple Moving Averages (SMA), Exponential Moving Averages (EMA), and Standard Deviation directly in the browser.
+- **Interactive Interface**: Zoomable charts with selection persistence and fluid time period management (30d, 90d, 1y, Max).
+- **Borsa Italiana Focus**: Full support for Milan tickers (e.g., `VUSA.MI`, `SWDA.MI`, `FTSEMIB.MI`) with prices displayed in **Euro (€)**.
+- **Performance & Caching**: Smart caching system (1 hour) to optimize API requests and ensure extreme speed.
 
-## 🚀 Tecnologie Utilizzate
+## 🚀 Tech Stack
 
 - **Frontend**: React 18, Next.js 14 (App Router).
-- **Grafica**: Tailwind CSS per il design responsivo e Recharts per le visualizzazioni dati.
-- **Dati**: `yahoo-finance2` per il recupero dei dati di mercato.
-- **Analisi**: Motore di calcolo custom in TypeScript per indicatori tecnici.
+- **Styling**: Tailwind CSS for responsive design and Lucide React for iconography.
+- **Visualization**: Recharts for dynamic data rendering.
+- **Data Source**: `yahoo-finance2` for market data retrieval.
+- **Analysis**: Custom TypeScript calculation engine for technical indicators.
 
-## 🛠️ Installazione Locale
+## 🛠️ Local Installation
 
-1. Clona il repository:
+1. Clone the repository:
    ```bash
    git clone https://github.com/chiarademeglio77/stock-dashboard.git
    ```
-2. Installa le dipendenze:
+2. Install dependencies:
    ```bash
    npm install
    ```
-3. Avvia il server di sviluppo:
+3. Start the development server:
    ```bash
    npm run dev
    ```
-4. Apri [http://localhost:3000](http://localhost:3000) nel tuo browser.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 💼 Per il Portfolio
+## 💼 Portfolio Highlight
 
-Questo progetto dimostra competenza nella gestione di API esterne, visualizzazione di dati complessi e costruzione di interfacce utente dinamiche e professionali in ambiente professionale Next.js.
+This project demonstrates proficiency in handling external APIs, visualizing complex data sets, and building dynamic, professional-grade user interfaces within the Next.js ecosystem.
 
 ---
-Creato da [Chiara De Meglio](https://github.com/chiarademeglio77)
+Created by [Chiara De Meglio](https://github.com/chiarademeglio77)
