@@ -228,7 +228,8 @@ export default function Home() {
       }
 
       try {
-        const response = await fetch(`/api/market-data?ticker=${selectedETF.id}&days=${selectedPeriod}`);
+        const interval = selectedPeriod === 1 ? '5m' : '1d';
+        const response = await fetch(`/api/market-data?ticker=${selectedETF.id}&days=${selectedPeriod}&interval=${interval}`);
         const rawData = await response.json();
 
         if (rawData.error) {
@@ -449,7 +450,7 @@ export default function Home() {
                 </div>
                 <div className="flex bg-secondary rounded-lg p-1 items-center gap-2">
                   <div className="flex bg-muted rounded-md p-0.5">
-                    {[30, 90, 180, 365].map((days) => (
+                    {[1, 30, 90, 180, 365].map((days) => (
                       <button
                         key={days}
                         onClick={() => setSelectedPeriod(days)}
@@ -458,7 +459,7 @@ export default function Home() {
                           : "text-muted-foreground hover:text-foreground"
                           }`}
                       >
-                        {days}D
+                        {days === 1 ? "1D" : `${days}D`}
                       </button>
                     ))}
                   </div>

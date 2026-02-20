@@ -59,6 +59,10 @@ export function PriceChart({ data, startIndex, endIndex, onZoomChange }: PriceCh
             hide={hide}
             tickFormatter={(str) => {
                 const date = new Date(str);
+                // If the string length is > 10, it's likely an ISO string with time
+                if (str.length > 10) {
+                    return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+                }
                 return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
             }}
             stroke="hsl(var(--muted-foreground))"
@@ -115,7 +119,13 @@ export function PriceChart({ data, startIndex, endIndex, onZoomChange }: PriceCh
                                     name === "volume" ? val.toLocaleString() : `€${val.toFixed(2)}`,
                                     name === "close" ? "Price" : name === "sma" ? "SMA (20)" : name === "ema" ? "EMA (50)" : name
                                 ]) as any}
-                                labelFormatter={(label) => new Date(label).toLocaleDateString()}
+                                labelFormatter={(label) => {
+                                    const date = new Date(label);
+                                    if (label.length > 10) {
+                                        return date.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
+                                    }
+                                    return date.toLocaleDateString();
+                                }}
                             />
                             <Bar yAxisId="volume" dataKey="volume" fill="hsl(var(--muted-foreground))" opacity={0.2} name="volume" />
                             <Area yAxisId="price" type="monotone" dataKey="close" stroke="#8884d8" fillOpacity={1} fill="url(#colorPrice)" strokeWidth={2} name="Price" />

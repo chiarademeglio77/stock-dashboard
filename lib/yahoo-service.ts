@@ -34,7 +34,7 @@ export const YAHOO_TICKER_MAP: Record<string, string> = {
     "GBPEUR": "GBPEUR=X"
 };
 
-export async function fetchYahooHistoricalData(ticker: string, periodDays: number = 365) {
+export async function fetchYahooHistoricalData(ticker: string, periodDays: number = 365, interval: string = '1d') {
     const symbol = YAHOO_TICKER_MAP[ticker] || ticker;
 
     const endDate = new Date();
@@ -45,7 +45,7 @@ export async function fetchYahooHistoricalData(ticker: string, periodDays: numbe
         const result = await yahooFinance.chart(symbol, {
             period1: startDate,
             period2: endDate,
-            interval: '1d'
+            interval: interval as any
         });
 
         const results = result.quotes;
@@ -54,16 +54,20 @@ export async function fetchYahooHistoricalData(ticker: string, periodDays: numbe
         // Clean, filter nulls, and sort data
         return results
             .filter((item: any) => item.date && item.close !== null && item.close !== undefined)
-            .map((item: any) => ({
-                date: item.date instanceof Date ? item.date.toISOString().split('T')[0] : String(item.date).split('T')[0],
-                open: item.open ?? item.close,
-                high: item.high ?? item.close,
-                low: item.low ?? item.close,
-                close: item.adjclose ?? item.close,
-                volume: item.volume ?? 0
-            }))
+            .map((item: any) => {
+                const date = item.date instanceof Date ? item.date : new Date(item.date);
+                return {
+                    // For intraday (1D), we keep the full ISO string to preserve time
+                    date: interval === '1d' ? date.toISOString().split('T')[0] : date.toISOString(),
+                    open: item.open ?? item.close,
+                    high: item.high ?? item.close,
+                    low: item.low ?? item.close,
+                    close: item.adjclose ?? item.close,
+                    volume: item.volume ?? 0
+                };
+            })
             .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-            // Remove duplicates (keep the first occurrence of each day)
+            // Remove duplicates (keep the first occurrence of each time slot)
             .filter((item: any, index: number, self: any[]) =>
                 index === self.findIndex((t: any) => t.date === item.date)
             );

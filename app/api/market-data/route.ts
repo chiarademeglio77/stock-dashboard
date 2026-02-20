@@ -5,13 +5,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const ticker = searchParams.get("ticker");
     const days = parseInt(searchParams.get("days") || "365");
+    const interval = searchParams.get("interval") || "1d";
 
     if (!ticker) {
         return NextResponse.json({ error: "Ticker is required" }, { status: 400 });
     }
 
     try {
-        const data = await fetchYahooHistoricalData(ticker, days);
+        const data = await fetchYahooHistoricalData(ticker, days, interval);
         return NextResponse.json(data);
     } catch (error: any) {
         console.error("Market data fetch error:", error);
