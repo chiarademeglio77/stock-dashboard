@@ -493,24 +493,30 @@ export default function Home() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
               <div className="p-3 rounded-xl border bg-card/50">
                 <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Trend</p>
-                <p className={`text-md font-bold ${(data[data.length - 1]?.sma || 0) > (data[data.length - 1]?.ema || 0) ? "text-green-500" : "text-red-500"}`}>
-                  {(data[data.length - 1]?.sma || 0) > (data[data.length - 1]?.ema || 0) ? "BULLISH" : "BEARISH"}
+                <p className={`text-md font-bold ${(data?.[data.length - 1]?.sma || 0) > (data?.[data.length - 1]?.ema || 0) ? "text-green-500" : "text-red-500"}`}>
+                  {data && data.length > 0
+                    ? (data[data.length - 1].sma || 0) > (data[data.length - 1].ema || 0) ? "BULLISH" : "BEARISH"
+                    : "---"}
                 </p>
               </div>
               <div className="p-3 rounded-xl border bg-card/50">
                 <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Volat. (SD)</p>
-                <p className="text-md font-bold text-foreground">{(data[data.length - 1]?.stdDev || 0).toFixed(2)}</p>
+                <p className="text-md font-bold text-foreground">
+                  {data && data.length > 0 ? (data[data.length - 1].stdDev || 0).toFixed(2) : "0.00"}
+                </p>
               </div>
               <div className="p-3 rounded-xl border bg-card/50">
                 <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Index Day Chg</p>
-                <p className={`text-xl font-bold ${selectedETF.changePercent >= 0 ? "text-green-500" : "text-red-500"}`}>
-                  {selectedETF.changePercent >= 0 ? "+" : ""}{selectedETF.changePercent.toFixed(2)}%
+                <p className={`text-xl font-bold ${currentMetrics?.priceChange >= 0 ? "text-green-500" : "text-red-500"}`}>
+                  {currentMetrics ? `${currentMetrics.priceChange >= 0 ? "+" : ""}${currentMetrics.priceChange.toFixed(2)}%` : "0.00%"}
                 </p>
               </div>
               <div className="p-3 rounded-xl border bg-card/50">
                 <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Perf. YTD</p>
-                <p className={`text-xl font-bold ${selectedETF.ytdChange >= 0 ? "text-green-500" : "text-red-500"}`}>
-                  {selectedETF.ytdChange >= 0 ? "+" : ""}{selectedETF.ytdChange.toFixed(2)}%
+                <p className={`text-xl font-bold ${(data?.[data.length - 1]?.close || 0) >= (data?.[0]?.close || 1) ? "text-green-500" : "text-red-500"}`}>
+                  {data && data.length > 1
+                    ? `${((data[data.length - 1].close / data[0].close - 1) * 100).toFixed(2)}%`
+                    : "0.00%"}
                 </p>
               </div>
             </div>
