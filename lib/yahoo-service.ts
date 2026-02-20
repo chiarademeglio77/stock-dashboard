@@ -26,7 +26,12 @@ export const YAHOO_TICKER_MAP: Record<string, string> = {
     "GREC": "GREC",       // Global X Greece (US)
     "VUSA_US": "VOO",
     "EURUSD": "EURUSD=X",
-    "USDCNY": "USDCNY=X"
+    "USDCNY": "USDCNY=X",
+    "JPYEUR": "JPYEUR=X",
+    "KRWEUR": "KRWEUR=X",
+    "CNYEUR": "CNYEUR=X",
+    "TRYEUR": "TRYEUR=X",
+    "GBPEUR": "GBPEUR=X"
 };
 
 export async function fetchYahooHistoricalData(ticker: string, periodDays: number = 365) {
@@ -130,5 +135,51 @@ export async function searchYahooTicker(query: string) {
     } catch (error) {
         console.error(`Yahoo Search error for ${query}:`, error);
         return null;
+    }
+}
+
+export async function fetchYahooYTDData(ticker: string) {
+    const symbol = YAHOO_TICKER_MAP[ticker] || ticker;
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+    try {
+        const result = await yahooFinance.chart(symbol, {
+            period1: startOfYear,
+            period2: now,
+            interval: '1d'
+        });
+
+        const quotes = result.quotes;
+        if (!quotes || quotes.length === 0) return null;
+
+        const firstQuote = quotes.find((q: any) => q.close !== null && q.close !== undefined);
+        const lastQuote = [...quotes].reverse().find((q: any) => q.close !== null && q.close !== undefined);
+
+        if (!firstQuote || !lastQuote) return null;
+
+        return {
+            symbol: ticker,
+            startPrice: firstQuote.adjclose ?? firstQuote.close,
+            currentPrice: lastQuote.adjclose ?? lastQuote.close,
+            changePercent: ((lastQuote.adjclose ?? lastQuote.close) / (firstQuote.adjclose ?? firstQuote.close) - 1) * 100
+        };
+    } catch (error) {
+        console.error(`Yahoo YTD error for ${symbol}:`, error);
+        return null;
+    }
+}
+
+export async function fetchYahooNews(ticker: string) {
+    const symbol = YAHOO_TICKER_MAP[ticker] || ticker;
+    try {
+        const result = await yahooFinance.search(symbol, {
+            newsCount: 5,
+            quotesCount: 0
+        });
+        return result.news || [];
+    } catch (error) {
+        console.error(`Yahoo News error for ${symbol}:`, error);
+        return [];
     }
 }

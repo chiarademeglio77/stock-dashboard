@@ -5,11 +5,13 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { PriceChart } from "@/components/PriceChart";
 import { MetricsCard } from "@/components/MetricsCard";
 import { generateHistoricalData } from "@/lib/data-engine";
-import { calculateSMA, calculateEMA, calculateStandardDeviation, AnalysisResult } from "@/lib/analysis-engine";
-import { TrendingUp, DollarSign, Activity, BarChart3 } from "lucide-react";
+import { calculateSMA, calculateEMA, calculateStandardDeviation, calculateRSI, calculateMACD, AnalysisResult } from "@/lib/analysis-engine";
 import { MOCK_ETFS, ETF } from "@/lib/mock-etfs";
 import { ETFTable } from "@/components/ETFTable";
 import { PortfolioTable } from "@/components/PortfolioTable";
+import { MarketOverview } from "@/components/MarketOverview";
+import { NewsSection } from "@/components/NewsSection";
+import { TrendingUp, DollarSign, Activity, BarChart3, Download } from "lucide-react";
 
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat("en-US", {
@@ -239,12 +241,18 @@ export default function Home() {
         const sma = calculateSMA(rawData, 20);
         const ema = calculateEMA(rawData, 50);
         const stdDev = calculateStandardDeviation(rawData, 20);
+        const rsi = calculateRSI(rawData, 14);
+        const { macdLine, signalLine, histogram } = calculateMACD(rawData);
 
         const analyzed = rawData.map((d: any, i: number) => ({
           ...d,
           sma: sma[i] ?? undefined,
           ema: ema[i] ?? undefined,
           stdDev: stdDev[i] ?? undefined,
+          rsi: rsi[i] ?? undefined,
+          macd: macdLine[i] ?? undefined,
+          macdSignal: signalLine[i] ?? undefined,
+          macdHist: histogram[i] ?? undefined,
         }));
 
         setData(analyzed);
@@ -268,12 +276,18 @@ export default function Home() {
       const sma = calculateSMA(mockData, 20);
       const ema = calculateEMA(mockData, 50);
       const stdDev = calculateStandardDeviation(mockData, 20);
+      const rsi = calculateRSI(mockData, 14);
+      const { macdLine, signalLine, histogram } = calculateMACD(mockData);
 
       const analyzed = mockData.map((d, i) => ({
         ...d,
         sma: sma[i] ?? undefined,
         ema: ema[i] ?? undefined,
         stdDev: stdDev[i] ?? undefined,
+        rsi: rsi[i] ?? undefined,
+        macd: macdLine[i] ?? undefined,
+        macdSignal: signalLine[i] ?? undefined,
+        macdHist: histogram[i] ?? undefined,
       }));
       setData(analyzed);
     }
@@ -303,11 +317,46 @@ export default function Home() {
     };
   }, [data, selectedETF, realQuotes]);
 
+  const handleExportCSV = () => {
+    if (!data || data.length === 0) return;
+
+    const headers = ["Date", "Open", "High", "Low", "Close", "Volume", "SMA", "EMA", "RSI", "MACD"];
+    const rows = data.map(d => [
+      d.date,
+      d.open.toFixed(2),
+      d.high.toFixed(2),
+      d.low.toFixed(2),
+      d.close.toFixed(2),
+      d.volume,
+      (d.sma || 0).toFixed(2),
+      (d.ema || 0).toFixed(2),
+      (d.rsi || 0).toFixed(2),
+      (d.macd || 0).toFixed(2)
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(e => e.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${selectedETF.id}_market_data.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Layout split into two main columns */}
+        {/* Top Market Overview Bar */}
+        <MarketOverview />
 
+        {/* Layout split into two main columns */}
         <div className="grid gap-6 lg:grid-cols-12 items-stretch">
           {/* Left Column: Currencies + ETF Table */}
           <div className="lg:col-span-4 flex flex-col space-y-4">
@@ -398,19 +447,28 @@ export default function Home() {
                     </span>
                   )}
                 </div>
-                <div className="flex bg-secondary rounded-lg p-1">
-                  {[30, 90, 180, 365].map((days) => (
-                    <button
-                      key={days}
-                      onClick={() => setSelectedPeriod(days)}
-                      className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${selectedPeriod === days
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                        }`}
-                    >
-                      {days}D
-                    </button>
-                  ))}
+                <div className="flex bg-secondary rounded-lg p-1 items-center gap-2">
+                  <div className="flex bg-muted rounded-md p-0.5">
+                    {[30, 90, 180, 365].map((days) => (
+                      <button
+                        key={days}
+                        onClick={() => setSelectedPeriod(days)}
+                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${selectedPeriod === days
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                          }`}
+                      >
+                        {days}D
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleExportCSV}
+                    className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors group"
+                    title="Export to CSV"
+                  >
+                    <Download className="h-4 w-4 group-hover:text-primary" />
+                  </button>
                 </div>
               </div>
               <div className="flex-1 min-h-0 relative">
@@ -457,13 +515,21 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Phase 2: Portfolio Component */}
-            <PortfolioTable
-              etfs={[...MOCK_ETFS, ...customEtfs]}
-              realQuotes={realQuotes}
-              portfolio={portfolio}
-              onUpdateItem={updatePortfolioItem}
-            />
+            {/* Bottom Section: Portfolio and News */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+              <div className="xl:col-span-8">
+                {/* Phase 2: Portfolio Component */}
+                <PortfolioTable
+                  etfs={[...MOCK_ETFS, ...customEtfs]}
+                  realQuotes={realQuotes}
+                  portfolio={portfolio}
+                  onUpdateItem={updatePortfolioItem}
+                />
+              </div>
+              <div className="xl:col-span-4 h-[500px]">
+                <NewsSection ticker={selectedETF.id} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
