@@ -491,6 +491,11 @@ export default function Home() {
     document.body.removeChild(link);
   };
 
+  const handleRemoveItems = (ids: string[]) => {
+    setPinnedIds(prev => prev.filter(pid => !ids.includes(pid)));
+    setPortfolio(prev => prev.filter(p => !ids.includes(p.id)));
+  };
+
   return (
     <DashboardLayout>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full pb-8">
@@ -666,6 +671,7 @@ export default function Home() {
               realQuotes={realQuotes}
               portfolio={portfolio}
               onUpdateItem={updatePortfolioItem}
+              onRemoveItems={handleRemoveItems}
             />
 
             <div className="glass-card p-6 border-secondary/10 relative overflow-hidden">

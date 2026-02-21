@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ETF } from "@/lib/mock-etfs";
-import { ArrowUp, ArrowDown, Snowflake, Edit2, Check, X } from "lucide-react";
+import { ArrowUp, ArrowDown, Snowflake, Edit2, Check, X, Trash2 } from "lucide-react";
 
 interface PortfolioItem {
     id: string;
@@ -17,6 +17,7 @@ interface PortfolioTableProps {
     realQuotes: Record<string, any>;
     portfolio: PortfolioItem[];
     onUpdateItem: (item: PortfolioItem) => void;
+    onRemoveItems?: (ids: string[]) => void;
 }
 
 const formatCurrency = (val: number) => {
@@ -34,9 +35,25 @@ const formatNumber = (val: number) => {
     }).format(val);
 };
 
-export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem }: PortfolioTableProps) {
+export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRemoveItems }: PortfolioTableProps) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValues, setEditValues] = useState<{ quantity: string; purchasePrice: string }>({ quantity: "", purchasePrice: "" });
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    const toggleSelection = (id: string) => {
+        const next = new Set(selectedIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelectedIds(next);
+    };
+
+    const toggleAll = () => {
+        if (selectedIds.size === portfolio.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(portfolio.map(p => p.id)));
+        }
+    };
 
     const handleEdit = (item: PortfolioItem) => {
         setEditingId(item.id);
@@ -95,9 +112,23 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem }: Po
             <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 blur-[100px] -z-10" />
 
             <div className="px-6 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <div>
-                    <h3 className="font-black text-xs text-secondary uppercase tracking-[0.2em]">Asset Management</h3>
-                    <p className="text-[10px] text-muted-foreground font-semibold mt-1">REAL-TIME PORTFOLIO TRACKING & RISK ANALYSIS</p>
+                <div className="flex items-center gap-4">
+                    <div>
+                        <h3 className="font-black text-xs text-secondary uppercase tracking-[0.2em]">Asset Management</h3>
+                        <p className="text-[10px] text-muted-foreground font-semibold mt-1">REAL-TIME PORTFOLIO TRACKING & RISK ANALYSIS</p>
+                    </div>
+                    {selectedIds.size > 0 && (
+                        <button
+                            onClick={() => {
+                                onRemoveItems?.(Array.from(selectedIds));
+                                setSelectedIds(new Set());
+                            }}
+                            className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-[10px] font-black tracking-widest transition-all shadow-lg shadow-red-500/20 uppercase"
+                        >
+                            <Trash2 className="h-3 w-3" />
+                            Delete {selectedIds.size} Selected
+                        </button>
+                    )}
                 </div>
                 <div className="bg-secondary/10 px-3 py-1 rounded-full text-[9px] font-black text-secondary tracking-widest border border-secondary/20">
                     LIVE DATA
@@ -107,6 +138,14 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem }: Po
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="border-b border-slate-200 bg-slate-100/50">
+                            <th className="w-10 px-4 py-4">
+                                <input
+                                    type="checkbox"
+                                    className="accent-primary h-4 w-4"
+                                    checked={portfolio.length > 0 && selectedIds.size === portfolio.length}
+                                    onChange={toggleAll}
+                                />
+                            </th>
                             <th className="text-left px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Ticker</th>
                             <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Holdings</th>
                             <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Avg Cost</th>
@@ -119,7 +158,7 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem }: Po
                             <th className="text-left px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Region</th>
                             <th className="text-center px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Snap 1</th>
                             <th className="text-center px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Snap 2</th>
-                            <th className="w-12"></th>
+                            <th className="w-24 px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -131,9 +170,18 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem }: Po
                             const dailyChangeValue = (realQuote?.change || 0) * item.quantity;
                             const totalProfitValue = (currentPrice - item.purchasePrice) * item.quantity;
                             const isEditing = editingId === item.id;
+                            const isSelected = selectedIds.has(item.id);
 
                             return (
-                                <tr key={item.id} className="border-b border-slate-100 transition-all hover:bg-slate-50">
+                                <tr key={item.id} className={`border-b border-slate-100 transition-all ${isSelected ? "bg-primary/5 shadow-[inset_2px_0_0_hsl(var(--primary))]" : "hover:bg-slate-50"}`}>
+                                    <td className="px-4 py-4 text-center">
+                                        <input
+                                            type="checkbox"
+                                            className="accent-primary h-4 w-4"
+                                            checked={isSelected}
+                                            onChange={() => toggleSelection(item.id)}
+                                        />
+                                    </td>
                                     <td className="px-6 py-4">
                                         <div className="font-black text-secondary text-sm tracking-tighter">{item.id}</div>
                                         <div className="text-[9px] text-muted-foreground font-bold uppercase truncate max-w-[120px] tracking-tight">{etf?.name}</div>
@@ -219,15 +267,28 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem }: Po
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-4 py-4 text-center">
-                                        {isEditing ? (
-                                            <div className="flex gap-1">
-                                                <button onClick={() => handleSave(item.id)} className="text-green-500 hover:text-green-600"><Check className="h-4 w-4" /></button>
-                                                <button onClick={() => setEditingId(null)} className="text-red-500 hover:text-red-600"><X className="h-4 w-4" /></button>
-                                            </div>
-                                        ) : (
-                                            <button onClick={() => handleEdit(item)} className="text-muted-foreground hover:text-primary"><Edit2 className="h-4 w-4" /></button>
-                                        )}
+                                    <td className="px-4 py-4">
+                                        <div className="flex items-center justify-center gap-2">
+                                            {isEditing ? (
+                                                <div className="flex gap-1">
+                                                    <button onClick={() => handleSave(item.id)} className="text-green-500 hover:text-green-600"><Check className="h-4 w-4" /></button>
+                                                    <button onClick={() => setEditingId(null)} className="text-red-500 hover:text-red-600"><X className="h-4 w-4" /></button>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <button onClick={() => handleEdit(item)} className="text-muted-foreground hover:text-primary transition-colors">
+                                                        <Edit2 className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => onRemoveItems?.([item.id])}
+                                                        className="text-muted-foreground hover:text-red-500 transition-colors"
+                                                        title="Remove from listed assets"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             );
@@ -236,7 +297,7 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem }: Po
                     {portfolio.length > 0 && (
                         <tfoot>
                             <tr className="bg-primary/5 font-black border-t-2 border-primary/20">
-                                <td className="px-6 py-6 uppercase text-xs tracking-widest text-primary flex flex-col">
+                                <td colSpan={2} className="px-6 py-6 uppercase text-xs tracking-widest text-primary flex flex-col">
                                     <span>Portfolio Total</span>
                                     <span className="text-[10px] lowercase font-medium text-muted-foreground mt-1">Aggregated Metrics</span>
                                 </td>
@@ -258,7 +319,7 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem }: Po
                                     <span className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">Total P/L</span>
                                     <span>{totals.totalProfit >= 0 ? "+" : ""}{formatCurrency(totals.totalProfit)}</span>
                                 </td>
-                                <td colSpan={5} className="bg-primary/5"></td>
+                                <td colSpan={6} className="bg-primary/5"></td>
                             </tr>
                         </tfoot>
                     )}
