@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ETF } from "@/lib/mock-etfs";
-import { ArrowUp, ArrowDown, Star } from "lucide-react";
+import { ArrowUp, ArrowDown, Star, Trash2 } from "lucide-react";
 
 interface ETFTableProps {
     etfs: ETF[];
@@ -14,6 +14,7 @@ interface ETFTableProps {
     showPinnedOnly?: boolean;
     onToggleFilter?: () => void;
     onAddTicker?: (ticker: string) => void;
+    onRemoveTicker?: (id: string) => void;
 }
 
 function ChangeCell({ value }: { value: number }) {
@@ -34,7 +35,7 @@ const formatCurrency = (val: number) => {
     }).format(val);
 };
 
-export function ETFTable({ etfs, selectedId, onSelect, realQuotes, pinnedIds, onTogglePin, showPinnedOnly, onToggleFilter, onAddTicker }: ETFTableProps) {
+export function ETFTable({ etfs, selectedId, onSelect, realQuotes, pinnedIds, onTogglePin, showPinnedOnly, onToggleFilter, onAddTicker, onRemoveTicker }: ETFTableProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearching, setIsSearching] = useState(false);
 
@@ -92,7 +93,7 @@ export function ETFTable({ etfs, selectedId, onSelect, realQuotes, pinnedIds, on
                 <table className="w-full text-sm">
                     <thead className="sticky top-0 z-10 bg-card/80 backdrop-blur-md">
                         <tr className="border-b border-border/50">
-                            <th className="w-8 px-2 py-2"></th>
+                            <th className="w-12 px-2 py-2"></th>
                             <th className="text-left px-3 py-2 text-[8px] font-bold text-muted-foreground uppercase tracking-widest">Symbol</th>
                             <th className="text-left px-3 py-2 text-[8px] font-bold text-muted-foreground uppercase tracking-widest">Name</th>
                             <th className="text-right px-3 py-2 text-[8px] font-bold text-muted-foreground uppercase tracking-widest">Price</th>
@@ -113,16 +114,29 @@ export function ETFTable({ etfs, selectedId, onSelect, realQuotes, pinnedIds, on
                                     className={`cursor-pointer transition-all hover:bg-primary/5 border-l-2 ${selectedId === etf.id ? "bg-primary/10 border-primary" : "border-transparent"
                                         }`}
                                 >
-                                    <td className="px-2 py-2 text-center w-8">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onTogglePin?.(etf.id);
-                                            }}
-                                            className={`transition-colors ${isPinned ? "text-yellow-500 hover:text-yellow-400" : "text-muted-foreground/20 hover:text-muted-foreground"}`}
-                                        >
-                                            <Star className="h-3 w-3" fill={isPinned ? "currentColor" : "none"} />
-                                        </button>
+                                    <td className="px-2 py-2 text-center w-12">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onTogglePin?.(etf.id);
+                                                }}
+                                                className={`transition-colors ${isPinned ? "text-yellow-500 hover:text-yellow-400" : "text-muted-foreground/20 hover:text-muted-foreground"}`}
+                                                title={isPinned ? "Unpin asset" : "Pin asset"}
+                                            >
+                                                <Star className="h-3 w-3" fill={isPinned ? "currentColor" : "none"} />
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onRemoveTicker?.(etf.id);
+                                                }}
+                                                className="text-muted-foreground/20 hover:text-red-500 transition-colors"
+                                                title="Remove from terminal"
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </button>
+                                        </div>
                                     </td>
                                     <td className="px-3 py-2">
                                         <span className="font-black tracking-tighter text-primary text-sm">{etf.id}</span>

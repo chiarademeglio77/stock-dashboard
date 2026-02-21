@@ -496,6 +496,20 @@ export default function Home() {
     setPortfolio(prev => prev.filter(p => !ids.includes(p.id)));
   };
 
+  const handleRemoveAssetFromMarket = (id: string) => {
+    // 1. Unpin if pinned
+    setPinnedIds(prev => prev.filter(pid => pid !== id));
+    // 2. Remove from portfolio if present
+    setPortfolio(prev => prev.filter(p => p.id !== id));
+    // 3. Remove from customEtfs if present
+    setCustomEtfs(prev => prev.filter(e => e.id !== id));
+
+    // Select the first mock ETF as a fallback if the removed one was selected
+    if (selectedETF.id === id) {
+      setSelectedETF(MOCK_ETFS[0]);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full pb-8">
@@ -546,6 +560,7 @@ export default function Home() {
               showPinnedOnly={showPinnedOnly}
               onToggleFilter={() => setShowPinnedOnly(!showPinnedOnly)}
               onAddTicker={handleAddTicker}
+              onRemoveTicker={handleRemoveAssetFromMarket}
             />
           </div>
         </aside>
