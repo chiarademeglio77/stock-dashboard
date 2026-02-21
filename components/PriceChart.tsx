@@ -272,14 +272,24 @@ export function PriceChart({
                             </Bar>
                             {Object.keys(comparisonDataMap).length > 0 ? (
                                 <>
-                                    <Line yAxisId="price" type="monotone" dataKey="mainIndex" stroke="#1e40af" strokeWidth={3} dot={false} name={mainAssetId} isAnimationActive={false} />
+                                    {/* Main Asset Line */}
+                                    <Line
+                                        yAxisId="price"
+                                        type="monotone"
+                                        dataKey="mainIndex"
+                                        stroke="#1e40af"
+                                        strokeWidth={3}
+                                        dot={false}
+                                        name={`[${selectedPeriod === "YTD" ? "YTD" : `${selectedPeriod}D`} %] ${mainAssetId}`}
+                                        isAnimationActive={false}
+                                    />
                                     {Object.keys(comparisonDataMap).map((ticker, idx) => {
                                         const indicatorColors: any = { "SPY": "#f97316", "QQQ": "#14b8a6", "VGK": "#8b5cf6" };
                                         const rotatingColors = ["#ef4444", "#10b981", "#3b82f6", "#f59e0b", "#6366f1"];
                                         const color = indicatorColors[ticker] || rotatingColors[idx % rotatingColors.length];
 
                                         const periodLabel = selectedPeriod === "YTD" ? "YTD" : `${selectedPeriod}D`;
-                                        const legendName = `${periodLabel} % ${ticker} ${mainAssetId}`;
+                                        const legendName = `[${periodLabel} %] ${ticker} | ${mainAssetId}`;
 
                                         return (
                                             <Line
