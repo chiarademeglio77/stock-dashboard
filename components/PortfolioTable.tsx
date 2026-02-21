@@ -151,6 +151,7 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                             <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Avg Cost</th>
                             <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-slate-200/50">Total Cost</th>
                             <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Market Pr.</th>
+                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-blue-100/50">Total Value</th>
                             <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Daily %</th>
                             <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Daily Δ</th>
                             <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Profit/Loss</th>
@@ -213,8 +214,11 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                                     <td className="px-4 py-4 text-right bg-slate-50">
                                         <span className="font-black text-slate-600 text-[11px]">{formatCurrency(item.quantity * item.purchasePrice)}</span>
                                     </td>
-                                    <td className="px-4 py-4 text-right font-black text-sm bg-blue-50 text-blue-700 tracking-tighter">
+                                    <td className="px-4 py-4 text-right font-black text-sm bg-blue-50/50 text-blue-700 tracking-tighter">
                                         {formatCurrency(currentPrice)}
+                                    </td>
+                                    <td className="px-4 py-4 text-right font-black text-sm bg-blue-100/50 text-blue-900 tracking-tighter">
+                                        {formatCurrency(item.quantity * currentPrice)}
                                     </td>
                                     <td className={`px-4 py-4 text-right font-black text-sm ${dailyChangePercent >= 0 ? "text-green-600" : "text-red-600"}`}>
                                         {dailyChangePercent >= 0 ? "+" : ""}{dailyChangePercent.toFixed(2)}%
@@ -297,26 +301,28 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                     {portfolio.length > 0 && (
                         <tfoot>
                             <tr className="bg-primary/5 font-black border-t-2 border-primary/20">
-                                <td colSpan={2} className="px-6 py-6 uppercase text-xs tracking-widest text-primary flex flex-col">
+                                <td colSpan={2} className="px-6 py-6 uppercase text-[9px] tracking-widest text-primary flex flex-col justify-center">
                                     <span>Portfolio Total</span>
-                                    <span className="text-[10px] lowercase font-medium text-muted-foreground mt-1">Aggregated Metrics</span>
+                                    <span className="text-[8px] lowercase font-medium text-muted-foreground mt-0.5">Aggregated Metrics</span>
                                 </td>
                                 <td className="px-4 py-6 font-mono text-right text-muted-foreground/60">—</td>
-                                <td className="px-4 py-6 text-right font-black text-base text-slate-600 bg-slate-100/50 flex flex-col justify-center">
-                                    <span className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">Total Cost Basis</span>
+                                <td className="px-4 py-6 font-mono text-right text-muted-foreground/60">—</td>
+                                <td className="px-4 py-6 text-right font-black text-base text-slate-700 bg-slate-200/50 flex flex-col justify-center">
+                                    <span className="text-[9px] uppercase text-slate-500 font-semibold mb-1">Total Cost Basis</span>
                                     <span>{formatCurrency(totals.totalCostBasis)}</span>
                                 </td>
-                                <td className="px-4 py-6 text-right font-bold text-lg bg-primary/10 flex flex-col justify-center">
-                                    <span className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">Total Value</span>
+                                <td className="px-4 py-6 font-mono text-right text-muted-foreground/60">—</td>
+                                <td className="px-4 py-6 text-right font-bold text-lg bg-blue-100 text-blue-900 flex flex-col justify-center">
+                                    <span className="text-[9px] uppercase text-blue-700 font-semibold mb-1">Total Value</span>
                                     <span>{formatCurrency(totals.marketValue)}</span>
                                 </td>
                                 <td className="px-4 py-6 font-mono text-right text-muted-foreground/60">—</td>
                                 <td className={`px-4 py-6 text-right text-lg ${totals.dailyChange >= 0 ? "text-green-600" : "text-red-600"} flex flex-col justify-center`}>
-                                    <span className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">Total Day Δ</span>
+                                    <span className="text-[9px] uppercase text-muted-foreground font-semibold mb-1">Total Day Δ</span>
                                     <span>{totals.dailyChange >= 0 ? "+" : ""}{formatCurrency(totals.dailyChange)}</span>
                                 </td>
                                 <td className={`px-4 py-6 text-right text-lg ${totals.totalProfit >= 0 ? "text-green-600" : "text-red-600"} flex flex-col justify-center`}>
-                                    <span className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">Total P/L</span>
+                                    <span className="text-[9px] uppercase text-muted-foreground font-semibold mb-1">Total P/L</span>
                                     <span>{totals.totalProfit >= 0 ? "+" : ""}{formatCurrency(totals.totalProfit)}</span>
                                 </td>
                                 <td colSpan={6} className="bg-primary/5"></td>
