@@ -529,17 +529,20 @@ export default function Home() {
               return (
                 <div key={pair} className={`p-2 rounded-lg border glass-card border-${color}/20 flex flex-col items-center text-center relative overflow-hidden`}>
                   <p className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter mb-1">{label}</p>
-                  <p className="text-xs font-black text-foreground truncate w-full">
+                  <p className="text-sm md:text-base font-black text-foreground truncate w-full">
                     {quote.price.toFixed(4)}
                   </p>
-                  <div className="flex flex-col items-center gap-0.5 mt-1">
-                    <span className={`text-[8px] font-black ${quote.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  <div className="flex items-center justify-center gap-1.5 mt-1 border-t border-border/20 pt-1 w-full">
+                    <span className={`text-[9px] font-black ${quote.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                       {quote.changePercent >= 0 ? '+' : ''}{quote.changePercent?.toFixed(2)}%
                     </span>
                     {ytd !== undefined && (
-                      <span className={`text-[7px] font-bold text-muted-foreground/60`}>
-                        YTD {ytd >= 0 ? '+' : ''}{ytd.toFixed(1)}%
-                      </span>
+                      <>
+                        <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                        <span className={`text-[9px] font-black text-muted-foreground uppercase`}>
+                          YTD {ytd >= 0 ? '+' : ''}{ytd.toFixed(1)}%
+                        </span>
+                      </>
                     )}
                   </div>
                 </div>

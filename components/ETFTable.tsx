@@ -31,7 +31,8 @@ const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "EUR",
-        minimumFractionDigits: 2,
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
     }).format(val);
 };
 
@@ -120,10 +121,10 @@ export function ETFTable({ etfs, selectedId, onSelect, realQuotes, pinnedIds, on
                                                 e.stopPropagation();
                                                 onTogglePin?.(etf.id);
                                             }}
-                                            className={`transition-colors ${isPinned ? "text-yellow-500 hover:text-yellow-400" : "text-muted-foreground/20 hover:text-muted-foreground"}`}
+                                            className={`transition-colors ${isPinned ? "text-yellow-500 hover:text-yellow-400" : "text-muted-foreground/30 hover:text-muted-foreground"}`}
                                             title={isPinned ? "Unpin asset" : "Pin asset"}
                                         >
-                                            <Star className="h-3 w-3" fill={isPinned ? "currentColor" : "none"} />
+                                            <Star className="h-3.5 w-3.5" fill={isPinned ? "currentColor" : "none"} />
                                         </button>
                                     </td>
                                     <td className="px-3 py-2">
@@ -143,7 +144,7 @@ export function ETFTable({ etfs, selectedId, onSelect, realQuotes, pinnedIds, on
                                                     e.stopPropagation();
                                                     onRemoveTicker?.(etf.id);
                                                 }}
-                                                className="text-muted-foreground/20 hover:text-red-500 transition-colors"
+                                                className="text-red-500/80 hover:text-red-600 transition-colors"
                                                 title="Remove from terminal"
                                             >
                                                 <Trash2 className="h-3 w-3" />
