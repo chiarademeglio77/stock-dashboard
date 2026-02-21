@@ -280,7 +280,7 @@ export function PriceChart({
                                         stroke="#1e40af"
                                         strokeWidth={3}
                                         dot={false}
-                                        name={`[${selectedPeriod === "YTD" ? "YTD" : `${selectedPeriod}D`} %] ${mainAssetId}`}
+                                        name={`[${selectedPeriod === "YTD" ? "YTD" : `${selectedPeriod}D`} %] | ${mainAssetId}`}
                                         isAnimationActive={false}
                                     />
                                     {Object.keys(comparisonDataMap).map((ticker, idx) => {
@@ -289,7 +289,7 @@ export function PriceChart({
                                         const color = indicatorColors[ticker] || rotatingColors[idx % rotatingColors.length];
 
                                         const periodLabel = selectedPeriod === "YTD" ? "YTD" : `${selectedPeriod}D`;
-                                        const legendName = `[${periodLabel} %] ${ticker} | ${mainAssetId}`;
+                                        const legendName = `[${periodLabel} %] | ${ticker}`;
 
                                         return (
                                             <Line
