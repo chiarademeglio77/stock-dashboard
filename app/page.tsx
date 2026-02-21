@@ -598,6 +598,8 @@ export default function Home() {
                     endIndex={zoomRange.endIndex}
                     onZoomChange={(range) => setZoomRange(range)}
                     comparisonDataMap={comparisonDataMap}
+                    mainAssetId={selectedETF.id}
+                    selectedPeriod={selectedPeriod}
                   />
                 </div>
 

@@ -25,9 +25,19 @@ interface PriceChartProps {
     endIndex?: number;
     onZoomChange?: (range: { startIndex: number; endIndex: number }) => void;
     comparisonDataMap?: Record<string, AnalysisResult[]>;
+    mainAssetId?: string;
+    selectedPeriod?: number | "YTD";
 }
 
-export function PriceChart({ data, startIndex, endIndex, onZoomChange, comparisonDataMap = {} }: PriceChartProps) {
+export function PriceChart({
+    data,
+    startIndex,
+    endIndex,
+    onZoomChange,
+    comparisonDataMap = {},
+    mainAssetId = "Asset",
+    selectedPeriod = 365
+}: PriceChartProps) {
     const [showRSI, setShowRSI] = useState(false);
     const [showMACD, setShowMACD] = useState(false);
     const [showSMA20, setShowSMA20] = useState(false);
@@ -262,11 +272,14 @@ export function PriceChart({ data, startIndex, endIndex, onZoomChange, compariso
                             </Bar>
                             {Object.keys(comparisonDataMap).length > 0 ? (
                                 <>
-                                    <Line yAxisId="price" type="monotone" dataKey="mainIndex" stroke="#1e40af" strokeWidth={3} dot={false} name="Price" isAnimationActive={false} />
+                                    <Line yAxisId="price" type="monotone" dataKey="mainIndex" stroke="#1e40af" strokeWidth={3} dot={false} name={mainAssetId} isAnimationActive={false} />
                                     {Object.keys(comparisonDataMap).map((ticker, idx) => {
                                         const indicatorColors: any = { "SPY": "#f97316", "QQQ": "#14b8a6", "VGK": "#8b5cf6" };
                                         const rotatingColors = ["#ef4444", "#10b981", "#3b82f6", "#f59e0b", "#6366f1"];
                                         const color = indicatorColors[ticker] || rotatingColors[idx % rotatingColors.length];
+
+                                        const periodLabel = selectedPeriod === "YTD" ? "YTD" : `${selectedPeriod}D`;
+                                        const legendName = `${periodLabel} % ${ticker} ${mainAssetId}`;
 
                                         return (
                                             <Line
@@ -277,7 +290,7 @@ export function PriceChart({ data, startIndex, endIndex, onZoomChange, compariso
                                                 stroke={color}
                                                 strokeWidth={3}
                                                 dot={false}
-                                                name={ticker}
+                                                name={legendName}
                                                 isAnimationActive={false}
                                             />
                                         );
@@ -285,7 +298,7 @@ export function PriceChart({ data, startIndex, endIndex, onZoomChange, compariso
                                 </>
                             ) : (
                                 <>
-                                    <Area yAxisId="price" type="monotone" dataKey="close" stroke="#2563eb" fillOpacity={1} fill="url(#colorPrice)" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0, fill: '#2563eb' }} name="Price" />
+                                    <Area yAxisId="price" type="monotone" dataKey="close" stroke="#2563eb" fillOpacity={1} fill="url(#colorPrice)" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0, fill: '#2563eb' }} name={mainAssetId} />
                                     {showSMA20 && <Line yAxisId="price" type="monotone" dataKey="sma" stroke="#ffc658" strokeWidth={1.5} dot={false} name="SMA (20)" />}
                                     {showEMA50 && <Line yAxisId="price" type="monotone" dataKey="ema" stroke="#82ca9d" strokeWidth={1.5} dot={false} name="EMA (50)" />}
                                     {showEMA200 && <Line yAxisId="price" type="monotone" dataKey="ema200" stroke="#ff7300" strokeWidth={1.5} dot={false} name="EMA (200)" />}
