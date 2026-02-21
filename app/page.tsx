@@ -5,19 +5,23 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { PriceChart } from "@/components/PriceChart";
 import { MetricsCard } from "@/components/MetricsCard";
 import { generateHistoricalData } from "@/lib/data-engine";
-import { calculateSMA, calculateEMA, calculateStandardDeviation, calculateRSI, calculateMACD, AnalysisResult } from "@/lib/analysis-engine";
+import { calculateSMA, calculateEMA, calculateStandardDeviation, calculateBollingerBands, calculateRSI, calculateMACD, calculateVolatility, calculateBeta, AnalysisResult } from "@/lib/analysis-engine";
 import { MOCK_ETFS, ETF } from "@/lib/mock-etfs";
 import { ETFTable } from "@/components/ETFTable";
 import { PortfolioTable } from "@/components/PortfolioTable";
 import { MarketOverview } from "@/components/MarketOverview";
 import { NewsSection } from "@/components/NewsSection";
-import { TrendingUp, DollarSign, Activity, BarChart3, Download } from "lucide-react";
+import { DiversificationChart } from "@/components/DiversificationChart";
+import { DividendSection } from "@/components/DividendSection";
+import { BacktestingTool } from "@/components/BacktestingTool";
+import { TrendingUp, DollarSign, Activity, BarChart3, Download, ShieldAlert, Globe } from "lucide-react";
 
-const formatCurrency = (val: number) => {
+const formatCurrency = (val: number, decimals = 2) => {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "EUR",
-    minimumFractionDigits: 2,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   }).format(val);
 };
 
@@ -29,7 +33,7 @@ const formatNumber = (val: number) => {
 };
 
 export default function Home() {
-  const [selectedPeriod, setSelectedPeriod] = useState<number>(365);
+  const [selectedPeriod, setSelectedPeriod] = useState<number | "YTD">(365);
   const [selectedETF, setSelectedETF] = useState<ETF>(MOCK_ETFS[0]);
   const [zoomRange, setZoomRange] = useState<{ startIndex?: number; endIndex?: number }>({});
 
@@ -38,6 +42,10 @@ export default function Home() {
   const [portfolio, setPortfolio] = useState<any[]>([]);
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
   const [customEtfs, setCustomEtfs] = useState<ETF[]>([]);
+  const [comparisonETFs, setComparisonETFs] = useState<Set<string>>(new Set());
+  const [comparisonDataMap, setComparisonDataMap] = useState<Record<string, AnalysisResult[]>>({});
+  const [marketBenchmarkData, setMarketBenchmarkData] = useState<AnalysisResult[]>([]);
+  const [compLoading, setCompLoading] = useState(false);
 
   // Load selection and portfolio from localStorage
   useEffect(() => {
@@ -152,6 +160,16 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isSimulation, setIsSimulation] = useState(false);
   const [realQuotes, setRealQuotes] = useState<Record<string, any>>({});
+  const [fxYtdData, setFxYtdData] = useState<Record<string, number>>({});
+
+  const ytdPerformance = useMemo(() => {
+    if (!data || data.length < 2) return 0;
+    const currentYear = new Date().getFullYear();
+    // Find the first price of the current year from the available data
+    const firstOfYear = data.find(d => new Date(d.date).getFullYear() === currentYear);
+    if (!firstOfYear) return 0;
+    return ((data[data.length - 1].close / firstOfYear.close) - 1) * 100;
+  }, [data]);
 
   // Fetch all real quotes for the table
   useEffect(() => {
@@ -189,10 +207,78 @@ export default function Home() {
       }
     }
     fetchQuotes();
+
+    // Fetch SPY for market beta
+    async function fetchMarketBenchmark() {
+      try {
+        const response = await fetch(`/api/market-data?ticker=SPY&days=365&interval=1d`);
+        const data = await response.json();
+        if (!data.error) setMarketBenchmarkData(data);
+      } catch (e) {
+        console.error("Failed to fetch SPY benchmark", e);
+      }
+    }
+    fetchMarketBenchmark();
+
+    // Fetch FX YTD for sidebar
+    async function fetchFxYtd() {
+      const fxTickers = ["EURUSD", "EURGBP", "EURCNY"];
+      const results: Record<string, number> = {};
+      await Promise.all(fxTickers.map(async (ticker) => {
+        try {
+          const res = await fetch(`/api/market-data?ticker=${ticker}&days=365&interval=1d`);
+          const raw = await res.json();
+          if (Array.isArray(raw) && raw.length > 2) {
+            const currentYear = new Date().getFullYear();
+            const firstOfYear = raw.find((d: any) => new Date(d.date).getFullYear() === currentYear) || raw[0];
+            results[ticker] = ((raw[raw.length - 1].close / firstOfYear.close) - 1) * 100;
+          }
+        } catch (e) {
+          console.error(`Failed to fetch YTD for ${ticker}`, e);
+        }
+      }));
+      setFxYtdData(results);
+    }
+    fetchFxYtd();
+
     // Refresh every 5 minutes
     const interval = setInterval(fetchQuotes, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Fetch comparison data when comparisonETFs or period changes
+  useEffect(() => {
+    if (comparisonETFs.size === 0) {
+      setComparisonDataMap({});
+      return;
+    }
+
+    async function fetchAllCompData() {
+      setCompLoading(true);
+      const interval = selectedPeriod === 1 ? '5m' : '1d';
+      const newDataMap: Record<string, AnalysisResult[]> = {};
+
+      await Promise.all(Array.from(comparisonETFs).map(async (ticker) => {
+        try {
+          let days = selectedPeriod === "YTD"
+            ? Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (1000 * 60 * 60 * 24)) + 1
+            : selectedPeriod;
+
+          const response = await fetch(`/api/market-data?ticker=${ticker}&days=${days}&interval=${interval}`);
+          const rawData = await response.json();
+          if (!rawData.error) {
+            newDataMap[ticker] = rawData;
+          }
+        } catch (err) {
+          console.error(`Failed to fetch data for ${ticker}:`, err);
+        }
+      }));
+
+      setComparisonDataMap(newDataMap);
+      setCompLoading(false);
+    }
+    fetchAllCompData();
+  }, [comparisonETFs, selectedPeriod]);
 
   // Clear old provider caches (one-time cleanup)
   useEffect(() => {
@@ -228,8 +314,12 @@ export default function Home() {
       }
 
       try {
-        const interval = selectedPeriod === 1 ? '5m' : '1d';
-        const response = await fetch(`/api/market-data?ticker=${selectedETF.id}&days=${selectedPeriod}&interval=${interval}`);
+        let days = selectedPeriod === "YTD"
+          ? Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (1000 * 60 * 60 * 24)) + 1
+          : selectedPeriod;
+
+        const interval = days === 1 ? '5m' : '1d';
+        const response = await fetch(`/api/market-data?ticker=${selectedETF.id}&days=${days}&interval=${interval}`);
         const rawData = await response.json();
 
         if (rawData.error) {
@@ -241,7 +331,9 @@ export default function Home() {
         // Calculate technical indicators
         const sma = calculateSMA(rawData, 20);
         const ema = calculateEMA(rawData, 50);
+        const ema200 = calculateEMA(rawData, 200);
         const stdDev = calculateStandardDeviation(rawData, 20);
+        const { bbUpper, bbLower } = calculateBollingerBands(rawData, sma, stdDev);
         const rsi = calculateRSI(rawData, 14);
         const { macdLine, signalLine, histogram } = calculateMACD(rawData);
 
@@ -249,7 +341,10 @@ export default function Home() {
           ...d,
           sma: sma[i] ?? undefined,
           ema: ema[i] ?? undefined,
+          ema200: ema200[i] ?? undefined,
           stdDev: stdDev[i] ?? undefined,
+          bbUpper: bbUpper[i] ?? undefined,
+          bbLower: bbLower[i] ?? undefined,
           rsi: rsi[i] ?? undefined,
           macd: macdLine[i] ?? undefined,
           macdSignal: signalLine[i] ?? undefined,
@@ -273,10 +368,13 @@ export default function Home() {
     function handleFallback() {
       setIsSimulation(true);
       // Fallback to mock data on error so the app doesn't crash
-      const mockData = generateHistoricalData(selectedPeriod);
+      let days = selectedPeriod === "YTD" ? 365 : selectedPeriod;
+      const mockData = generateHistoricalData(days);
       const sma = calculateSMA(mockData, 20);
       const ema = calculateEMA(mockData, 50);
+      const ema200 = calculateEMA(mockData, 200);
       const stdDev = calculateStandardDeviation(mockData, 20);
+      const { bbUpper, bbLower } = calculateBollingerBands(mockData, sma, stdDev);
       const rsi = calculateRSI(mockData, 14);
       const { macdLine, signalLine, histogram } = calculateMACD(mockData);
 
@@ -284,10 +382,13 @@ export default function Home() {
         ...d,
         sma: sma[i] ?? undefined,
         ema: ema[i] ?? undefined,
+        ema200: ema200[i] ?? undefined,
         stdDev: stdDev[i] ?? undefined,
+        bbUpper: bbUpper[i] ?? undefined,
+        bbLower: bbLower[i] ?? undefined,
         rsi: rsi[i] ?? undefined,
         macd: macdLine[i] ?? undefined,
-        macdSignal: signalLine[i] ?? undefined,
+        macdSignal: macdLine[i] ?? undefined,
         macdHist: histogram[i] ?? undefined,
       }));
       setData(analyzed);
@@ -306,17 +407,56 @@ export default function Home() {
     const priceChange = realQuote?.changePercent || selectedETF.changePercent;
     const volChange = selectedETF.id === "ETFMIB" ? 40.2 : -12.5;
 
+    const volValue = realQuote?.volume || current.volume || 0;
+
     return {
       ticker: selectedETF.id,
       name: selectedETF.name,
       price: formatCurrency(displayPrice),
       priceChange,
-      volume: formatNumber(realQuote?.volume || current.volume),
+      volume: volValue > 1000 ? formatNumber(volValue) : volValue.toString(),
       volChange,
       high: formatCurrency(realQuote?.high || current.high || 0),
       low: formatCurrency(realQuote?.low || current.low || 0),
     };
   }, [data, selectedETF, realQuotes]);
+
+  const portfolioRisk = useMemo(() => {
+    if (portfolio.length === 0 || marketBenchmarkData.length < 2) return { beta: 1, volatility: 0 };
+
+    let totalValue = 0;
+    let weightedBeta = 0;
+    let weightedVol = 0;
+
+    portfolio.forEach(item => {
+      const etf = [...MOCK_ETFS, ...customEtfs].find(e => e.id === item.id);
+      if (!etf) return;
+
+      const quote = realQuotes[item.id] || { price: etf.price };
+      const value = item.quantity * quote.price;
+      totalValue += value;
+
+      // Note: Individual beta/vol calculation here is simplified
+      // In a real app, we'd fetch historical data for each asset
+      // For now, we'll use a placeholder or calculate if we have data for the current asset
+      if (item.id === selectedETF.id && data.length > 2) {
+        const beta = calculateBeta(data, marketBenchmarkData);
+        const vol = calculateVolatility(data);
+        weightedBeta += beta * value;
+        weightedVol += vol * value;
+      } else {
+        // Placeholder for other assets in portfolio
+        weightedBeta += 1 * value;
+        weightedVol += 0.15 * value;
+      }
+    });
+
+    if (totalValue === 0) return { beta: 1, volatility: 0 };
+    return {
+      beta: weightedBeta / totalValue,
+      volatility: weightedVol / totalValue
+    };
+  }, [portfolio, selectedETF, data, marketBenchmarkData, realQuotes, customEtfs]);
 
   const handleExportCSV = () => {
     if (!data || data.length === 0) return;
@@ -353,193 +493,210 @@ export default function Home() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Top Market Overview Bar */}
-        <MarketOverview />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full pb-8">
+        {/* Left Column: Sidebar Assets (3) */}
+        <aside className="lg:col-span-3 flex flex-col space-y-4">
+          <div className="grid grid-cols-3 gap-2 flex-shrink-0">
+            {['EURUSD', 'EURGBP', 'EURCNY'].map((pair) => {
+              const symbols: Record<string, { label: string, icon: any, color: string }> = {
+                'EURUSD': { label: 'EUR/USD', icon: DollarSign, color: 'primary' },
+                'EURGBP': { label: 'EUR/GBP', icon: TrendingUp, color: 'secondary' },
+                'EURCNY': { label: 'EUR/CNY', icon: DollarSign, color: 'primary' }
+              };
+              const { label, icon: Icon, color } = symbols[pair];
+              const quote = realQuotes[pair] || { price: 0, changePercent: 0 };
+              const ytd = fxYtdData[pair];
 
-        {/* Layout split into two main columns */}
-        <div className="grid gap-6 lg:grid-cols-12 items-stretch">
-          {/* Left Column: Currencies + ETF Table */}
-          <div className="lg:col-span-4 flex flex-col space-y-4">
-            {/* Currency Metrics Group */}
-            <div className="grid grid-cols-2 gap-4 flex-shrink-0">
-              <div className="p-4 rounded-xl border bg-card shadow-sm">
-                <div className="flex justify-between items-start mb-2">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">EUR / USD</p>
-                  <DollarSign className="h-3 w-3 text-muted-foreground" />
-                </div>
-                <p className="text-lg font-bold">{realQuotes['EURUSD']?.price?.toFixed(4) || "1.0845"}</p>
-                <div className="flex gap-4 mt-1">
-                  <span className={`text-base font-bold ${realQuotes['EURUSD']?.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {realQuotes['EURUSD']?.changePercent >= 0 ? '+' : ''}{realQuotes['EURUSD']?.changePercent?.toFixed(2)}%
-                  </span>
-                </div>
-              </div>
-              <div className="p-4 rounded-xl border bg-card shadow-sm">
-                <div className="flex justify-between items-start mb-2">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">USD / CNY</p>
-                  <TrendingUp className="h-3 w-3 text-muted-foreground" />
-                </div>
-                <p className="text-lg font-bold">{realQuotes['USDCNY']?.price?.toFixed(4) || "7.2450"}</p>
-                <div className="flex gap-4 mt-1">
-                  <span className={`text-base font-bold ${realQuotes['USDCNY']?.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {realQuotes['USDCNY']?.changePercent >= 0 ? '+' : ''}{realQuotes['USDCNY']?.changePercent?.toFixed(2)}%
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="h-[650px]">
-              <ETFTable
-                etfs={showPinnedOnly
-                  ? [...MOCK_ETFS, ...customEtfs].filter(e => pinnedIds.includes(e.id))
-                  : [...MOCK_ETFS, ...customEtfs]
-                }
-                selectedId={selectedETF.id}
-                onSelect={(etf) => setSelectedETF(etf)}
-                realQuotes={realQuotes}
-                pinnedIds={pinnedIds}
-                onTogglePin={togglePin}
-                showPinnedOnly={showPinnedOnly}
-                onToggleFilter={() => setShowPinnedOnly(!showPinnedOnly)}
-                onAddTicker={handleAddTicker}
-              />
-            </div>
-          </div>
-
-          {/* Right Column: Asset Metrics + Chart + Statistics + Portfolio */}
-          <div className="lg:col-span-8 flex flex-col space-y-4">
-            {/* Asset Metrics Group */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
-              <MetricsCard
-                title="Market Price"
-                value={currentMetrics?.price || "€0.00"}
-                change={currentMetrics?.priceChange}
-                changeLabel="vs yesterday"
-                icon={<Activity className="h-4 w-4" />}
-              />
-              <MetricsCard
-                title="24h Volume"
-                value={currentMetrics?.volume || "0"}
-                change={currentMetrics?.volChange}
-                changeLabel="vs yesterday"
-                icon={<BarChart3 className="h-4 w-4" />}
-              />
-              <MetricsCard
-                title="24h High"
-                value={currentMetrics?.high || "€0.00"}
-                icon={<TrendingUp className="h-4 w-4" />}
-              />
-              <MetricsCard
-                title="24h Low"
-                value={currentMetrics?.low || "€0.00"}
-                icon={<Activity className="h-4 w-4" />}
-              />
-            </div>
-
-            <div className="bg-card rounded-xl border px-6 py-4 shadow-sm h-[450px] flex flex-col">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold text-lg leading-none mb-1">Analysis Console: {selectedETF.id}</h3>
-                  <p className="text-xs text-muted-foreground leading-none">{selectedETF.name}</p>
-                  {isSimulation && (
-                    <span className="inline-flex items-center rounded-md bg-yellow-500/10 px-2 py-1 text-[10px] font-bold text-yellow-500 ring-1 ring-inset ring-yellow-500/20 mt-1">
-                      SIMULATION MODE (API RESTRICTED)
+              return (
+                <div key={pair} className={`p-2 rounded-lg border glass-card border-${color}/20 flex flex-col items-center text-center relative overflow-hidden`}>
+                  <p className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter mb-1">{label}</p>
+                  <p className="text-xs font-black text-foreground truncate w-full">
+                    {quote.price.toFixed(4)}
+                  </p>
+                  <div className="flex flex-col items-center gap-0.5 mt-1">
+                    <span className={`text-[8px] font-black ${quote.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {quote.changePercent >= 0 ? '+' : ''}{quote.changePercent?.toFixed(2)}%
                     </span>
-                  )}
-                </div>
-                <div className="flex bg-secondary rounded-lg p-1 items-center gap-2">
-                  <div className="flex bg-muted rounded-md p-0.5">
-                    {[1, 30, 90, 180, 365].map((days) => (
-                      <button
-                        key={days}
-                        onClick={() => setSelectedPeriod(days)}
-                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${selectedPeriod === days
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                          }`}
-                      >
-                        {days === 1 ? "1D" : `${days}D`}
-                      </button>
-                    ))}
+                    {ytd !== undefined && (
+                      <span className={`text-[7px] font-bold text-muted-foreground/60`}>
+                        YTD {ytd >= 0 ? '+' : ''}{ytd.toFixed(1)}%
+                      </span>
+                    )}
                   </div>
-                  <button
-                    onClick={handleExportCSV}
-                    className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors group"
-                    title="Export to CSV"
-                  >
-                    <Download className="h-4 w-4 group-hover:text-primary" />
-                  </button>
                 </div>
-              </div>
-              <div className="flex-1 min-h-0 relative">
-                {loading && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-sm rounded-lg">
-                    <div className="flex flex-col items-center">
-                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                      <p className="mt-2 text-xs font-medium text-muted-foreground">Fetching market data...</p>
+              );
+            })}
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <ETFTable
+              etfs={showPinnedOnly
+                ? [...MOCK_ETFS, ...customEtfs].filter(e => pinnedIds.includes(e.id))
+                : [...MOCK_ETFS, ...customEtfs]
+              }
+              selectedId={selectedETF.id}
+              onSelect={(etf) => setSelectedETF(etf)}
+              realQuotes={realQuotes}
+              pinnedIds={pinnedIds}
+              onTogglePin={togglePin}
+              showPinnedOnly={showPinnedOnly}
+              onToggleFilter={() => setShowPinnedOnly(!showPinnedOnly)}
+              onAddTicker={handleAddTicker}
+            />
+          </div>
+        </aside>
+
+        {/* Main Content Area (9 columns) */}
+        <div className="lg:col-span-9 flex flex-col space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Center Column: Analysis Console (2/3 of the 9-col area) */}
+            <main className="lg:col-span-2 flex flex-col space-y-6">
+              <div className="glass-card flex flex-col h-[800px] p-6 border-primary/20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[120px] -z-10" />
+
+                <div className="flex justify-between items-start mb-6 flex-shrink-0">
+                  <div className="space-y-1">
+                    <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] flex items-center gap-2">
+                      <Activity className="h-3 w-3" /> Terminal Analysis
+                    </h3>
+                    <div className="flex items-baseline gap-3">
+                      <h1 className="text-4xl font-black tracking-tighter text-foreground">{selectedETF.id}</h1>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{selectedETF.name}</span>
+                    </div>
+                    {isSimulation && (
+                      <span className="inline-block px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-500 text-[9px] font-black uppercase tracking-widest border border-yellow-500/20">
+                        Simulation Mode Active
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex bg-secondary/5 rounded-lg p-1 border border-border/10">
+                    <div className="flex bg-card/40 rounded-md p-0.5">
+                      {[1, 30, 90, 180, 365, "YTD"].map((period) => (
+                        <button
+                          key={period}
+                          onClick={() => setSelectedPeriod(period as any)}
+                          className={`px-3 py-1 text-[9px] font-black rounded transition-all ${selectedPeriod === period
+                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                            : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                          {period === 1 ? "1D" : period === "YTD" ? "YTD" : `${period}D`}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                )}
-                <PriceChart
-                  data={data}
-                  startIndex={zoomRange.startIndex}
-                  endIndex={zoomRange.endIndex}
-                  onZoomChange={(range) => setZoomRange(range)}
+                </div>
+
+                <div className="flex-1 min-h-0 relative mb-6">
+                  {loading && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-sm rounded-xl">
+                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+                    </div>
+                  )}
+                  <PriceChart
+                    data={data}
+                    startIndex={zoomRange.startIndex}
+                    endIndex={zoomRange.endIndex}
+                    onZoomChange={(range) => setZoomRange(range)}
+                    comparisonDataMap={comparisonDataMap}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-1">
+                  <MetricsCard
+                    title="Market Value"
+                    value={currentMetrics?.price || "€0.00"}
+                    change={currentMetrics?.priceChange}
+                    changeLabel="24H"
+                    secondaryChange={ytdPerformance}
+                    secondaryLabel="YTD"
+                    icon={<Activity className="h-4 w-4 text-primary" />}
+                  />
+                  <MetricsCard
+                    title="Vol / 24H"
+                    value={currentMetrics?.volume || "0"}
+                    change={currentMetrics?.volChange}
+                    changeLabel="Δ"
+                    icon={<BarChart3 className="h-4 w-4 text-secondary" />}
+                  />
+                  <MetricsCard
+                    title="High / 24H"
+                    value={currentMetrics?.high || "€0.00"}
+                    icon={<TrendingUp className="h-4 w-4 text-green-500" />}
+                  />
+                  <MetricsCard
+                    title="Low / 24H"
+                    value={currentMetrics?.low || "€0.00"}
+                    icon={<Activity className="h-4 w-4 text-red-500" />}
+                  />
+                </div>
+              </div>
+            </main>
+
+            {/* Right Column: Intelligence & Strategy (1/3 of the 9-col area) */}
+            <aside className="lg:col-span-1 flex flex-col space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-[10px] font-black text-secondary uppercase tracking-[0.3em] flex items-center gap-2 px-1">
+                  <Globe className="h-3 w-3" /> Market Vectors
+                </h3>
+                <MarketOverview
+                  activeComparisons={comparisonETFs}
+                  onToggleComparison={(ticker) => {
+                    setComparisonETFs(prev => {
+                      const next = new Set(prev);
+                      if (next.has(ticker)) next.delete(ticker);
+                      else next.add(ticker);
+                      return next;
+                    });
+                  }}
                 />
               </div>
-            </div>
 
-            {/* Quick Stats Banner */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
-              <div className="p-3 rounded-xl border bg-card/50">
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Trend</p>
-                <p className={`text-md font-bold ${(data?.[data.length - 1]?.sma || 0) > (data?.[data.length - 1]?.ema || 0) ? "text-green-500" : "text-red-500"}`}>
-                  {data && data.length > 0
-                    ? (data[data.length - 1].sma || 0) > (data[data.length - 1].ema || 0) ? "BULLISH" : "BEARISH"
-                    : "---"}
-                </p>
-              </div>
-              <div className="p-3 rounded-xl border bg-card/50">
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Volat. (SD)</p>
-                <p className="text-md font-bold text-foreground">
-                  {data && data.length > 0 ? (data[data.length - 1].stdDev || 0).toFixed(2) : "0.00"}
-                </p>
-              </div>
-              <div className="p-3 rounded-xl border bg-card/50">
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Index Day Chg</p>
-                <p className={`text-xl font-bold ${currentMetrics?.priceChange >= 0 ? "text-green-500" : "text-red-500"}`}>
-                  {currentMetrics ? `${currentMetrics.priceChange >= 0 ? "+" : ""}${currentMetrics.priceChange.toFixed(2)}%` : "0.00%"}
-                </p>
-              </div>
-              <div className="p-3 rounded-xl border bg-card/50">
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase mb-1">Perf. YTD</p>
-                <p className={`text-xl font-bold ${(data?.[data.length - 1]?.close || 0) >= (data?.[0]?.close || 1) ? "text-green-500" : "text-red-500"}`}>
-                  {data && data.length > 1
-                    ? `${((data[data.length - 1].close / data[0].close - 1) * 100).toFixed(2)}%`
-                    : "0.00%"}
-                </p>
-              </div>
-            </div>
-
-            {/* Bottom Section: Portfolio and News */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-              <div className="xl:col-span-8">
-                {/* Phase 2: Portfolio Component */}
-                <PortfolioTable
-                  etfs={[...MOCK_ETFS, ...customEtfs]}
-                  realQuotes={realQuotes}
-                  portfolio={portfolio}
-                  onUpdateItem={updatePortfolioItem}
-                />
-              </div>
-              <div className="xl:col-span-4 h-[500px]">
+              <div className="max-h-[500px] flex flex-col">
                 <NewsSection ticker={selectedETF.id} />
+              </div>
+            </aside>
+          </div>
+
+          {/* Bottom Section: Unified Analytics (Full 9-col width) */}
+          <div className="flex flex-col space-y-6">
+            <PortfolioTable
+              etfs={[...MOCK_ETFS, ...customEtfs]}
+              realQuotes={realQuotes}
+              portfolio={portfolio}
+              onUpdateItem={updatePortfolioItem}
+            />
+
+            <div className="glass-card p-6 border-secondary/10 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-secondary/20 to-transparent" />
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 px-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Backtest Engine</h3>
+                  </div>
+                  <BacktestingTool data={data} ticker={selectedETF.id} />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 px-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
+                    <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Asset Diversification</h3>
+                  </div>
+                  <DiversificationChart portfolio={portfolio} etfs={[...MOCK_ETFS, ...customEtfs]} realQuotes={realQuotes} />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 px-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Yield Projections</h3>
+                  </div>
+                  <DividendSection portfolio={portfolio} etfs={[...MOCK_ETFS, ...customEtfs]} />
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </DashboardLayout>
+      </div >
+    </DashboardLayout >
   );
 }

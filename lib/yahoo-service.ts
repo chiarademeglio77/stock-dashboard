@@ -24,14 +24,26 @@ export const YAHOO_TICKER_MAP: Record<string, string> = {
     "INRG": "INRG.MI",    // Clean Energy
     "HEAL": "HEAL.MI",    // Healthcare Innovation
     "GREC": "GREC",       // Global X Greece (US)
+    "NIKKEI": "^N225",    // Nikkei 225
+    "KOSPI": "^KS11",     // KOSPI Composite
+    "VGK": "VGK",         // Vanguard FTSE Europe ETF
     "VUSA_US": "VOO",
     "EURUSD": "EURUSD=X",
+    "EURGBP": "EURGBP=X",
+    "EURCNY": "EURCNY=X",
     "USDCNY": "USDCNY=X",
     "JPYEUR": "JPYEUR=X",
     "KRWEUR": "KRWEUR=X",
     "CNYEUR": "CNYEUR=X",
     "TRYEUR": "TRYEUR=X",
-    "GBPEUR": "GBPEUR=X"
+    "GBPEUR": "GBPEUR=X",
+    "ENEL": "ENEL.MI",
+    "ENI": "ENI.MI",
+    "RACE": "RACE.MI",
+    "ISP": "ISP.MI",
+    "UCG": "UCG.MI",
+    "STLAM": "STLAM.MI",
+    "G": "G.MI"
 };
 
 export async function fetchYahooHistoricalData(ticker: string, periodDays: number = 365, interval: string = '1d') {

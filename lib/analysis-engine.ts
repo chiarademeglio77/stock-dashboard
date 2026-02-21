@@ -3,11 +3,14 @@ import { MarketData } from './data-engine';
 export interface AnalysisResult extends MarketData {
     sma?: number;
     ema?: number;
+    ema200?: number;
     stdDev?: number;
     rsi?: number;
     macd?: number;
     macdSignal?: number;
     macdHist?: number;
+    bbUpper?: number;
+    bbLower?: number;
 }
 
 export function calculateSMA(data: MarketData[], period: number): (number | null)[] {
@@ -98,6 +101,25 @@ export function calculateStandardDeviation(data: MarketData[], period: number): 
         stdDev.push(Math.sqrt(variance));
     }
     return stdDev;
+}
+
+export function calculateBollingerBands(data: MarketData[], sma: (number | null)[], stdDev: (number | null)[]) {
+    const bbUpper: (number | null)[] = [];
+    const bbLower: (number | null)[] = [];
+
+    for (let i = 0; i < data.length; i++) {
+        const mean = sma[i];
+        const sd = stdDev[i];
+
+        if (mean !== null && sd !== null) {
+            bbUpper.push(mean + 2 * sd);
+            bbLower.push(mean - 2 * sd);
+        } else {
+            bbUpper.push(null);
+            bbLower.push(null);
+        }
+    }
+    return { bbUpper, bbLower };
 }
 
 export function calculateRSI(data: MarketData[], period: number = 14): (number | null)[] {
@@ -194,4 +216,67 @@ export function calculateMACD(data: MarketData[], fastPeriod: number = 12, slowP
     }
 
     return { macdLine, signalLine, histogram };
+}
+
+export function calculateVolatility(data: MarketData[], period: number = 30): number {
+    if (data.length < 2) return 0;
+
+    // Calculate daily returns
+    const returns: number[] = [];
+    for (let i = 1; i < data.length; i++) {
+        returns.push((data[i].close / data[i - 1].close) - 1);
+    }
+
+    const window = returns.slice(-period);
+    if (window.length === 0) return 0;
+
+    const mean = window.reduce((a, b) => a + b, 0) / window.length;
+    const variance = window.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / window.length;
+    const stdDev = Math.sqrt(variance);
+
+    // Annualize (assuming 252 trading days)
+    return stdDev * Math.sqrt(252);
+}
+
+export function calculateBeta(assetData: MarketData[], marketData: MarketData[], period: number = 60): number {
+    if (assetData.length < 2 || marketData.length < 2) return 1;
+
+    // Align dates
+    const assetMap = new Map(assetData.map(d => [d.date, d.close]));
+    const commonReturns: { asset: number; market: number }[] = [];
+
+    // Sort market data to process sequentially
+    const sortedMarket = [...marketData].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    for (let i = 1; i < sortedMarket.length; i++) {
+        const date = sortedMarket[i].date;
+        const prevDate = sortedMarket[i - 1].date;
+
+        const assetPrice = assetMap.get(date);
+        const prevAssetPrice = assetMap.get(prevDate);
+
+        if (assetPrice && prevAssetPrice) {
+            commonReturns.push({
+                asset: (assetPrice / prevAssetPrice) - 1,
+                market: (sortedMarket[i].close / sortedMarket[i - 1].close) - 1
+            });
+        }
+    }
+
+    const window = commonReturns.slice(-period);
+    if (window.length < 5) return 1; // Not enough data
+
+    const meanAsset = window.reduce((a, b) => a + b.asset, 0) / window.length;
+    const meanMarket = window.reduce((a, b) => a + b.market, 0) / window.length;
+
+    let covariance = 0;
+    let marketVariance = 0;
+
+    for (const r of window) {
+        covariance += (r.asset - meanAsset) * (r.market - meanMarket);
+        marketVariance += Math.pow(r.market - meanMarket, 2);
+    }
+
+    if (marketVariance === 0) return 1;
+    return covariance / marketVariance;
 }

@@ -1,26 +1,27 @@
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div className="min-h-screen bg-background text-foreground flex flex-col">
-            <header className="border-b bg-card/50 backdrop-blur-xl sticky top-0 z-50">
-                <div className="w-full px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                            <span className="text-primary-foreground font-bold">H</span>
+        <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/30">
+            <header className="bg-white sticky top-0 z-50 border-b border-slate-200">
+                <div className="w-full px-8 h-20 flex items-center justify-between">
+                    <div className="flex items-center gap-3 group cursor-pointer">
+                        <div className="h-10 w-10 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center transition-all">
+                            <span className="text-slate-900 font-black text-xl">Q</span>
                         </div>
-                        <span className="font-semibold text-lg">Historical Dashboard</span>
+                        <div className="flex flex-col">
+                            <span className="font-black text-xl tracking-[0.2em] uppercase leading-none text-foreground">Quantum</span>
+                            <span className="font-bold text-[10px] tracking-[0.4em] uppercase text-primary/80 leading-none mt-1">Finance Terminal</span>
+                        </div>
                     </div>
-                    <nav className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
-                        <a href="#" className="hover:text-foreground transition-colors">Overview</a>
-                        <a href="#" className="hover:text-foreground transition-colors">Markets</a>
-                        <a href="#" className="hover:text-foreground transition-colors">Analysis</a>
-                    </nav>
                 </div>
             </header>
-            <main className="flex-1 w-full px-6 py-8 mx-auto">
+            <main className="flex-1 w-full px-8 py-10 mx-auto max-w-[1800px]">
                 {children}
             </main>
-            <footer className="border-t py-6 text-center text-sm text-muted-foreground">
-                © 2025 Historical Data Systems
+            <footer className="py-10 text-center relative">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-[1px] bg-gradient-to-r from-transparent via-border to-transparent" />
+                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground/50">
+                    Proprietary Algorithm © 2025 Quantum Intelligence
+                </p>
             </footer>
         </div>
     );

@@ -19,8 +19,8 @@ interface ETFTableProps {
 function ChangeCell({ value }: { value: number }) {
     const isPos = value >= 0;
     return (
-        <span className={`flex items-center gap-1 font-bold text-base ${isPos ? "text-green-500" : "text-red-500"}`}>
-            {isPos ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+        <span className={`flex items-center gap-0.5 font-bold text-xs ${isPos ? "text-green-500" : "text-red-500"}`}>
+            {isPos ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
             {Math.abs(value).toFixed(2)}%
         </span>
     );
@@ -48,19 +48,19 @@ export function ETFTable({ etfs, selectedId, onSelect, realQuotes, pinnedIds, on
     };
 
     return (
-        <div className="bg-card rounded-xl border shadow-sm flex flex-col h-full overflow-hidden">
-            <div className="px-6 py-4 border-b flex-shrink-0 space-y-3">
+        <div className="glass-card flex flex-col h-full overflow-hidden border-primary/10">
+            <div className="px-6 py-4 border-b border-border/50 flex-shrink-0 space-y-3 bg-card/20 backdrop-blur-md">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h3 className="font-semibold text-lg">Market Assets</h3>
-                        <p className="text-sm text-muted-foreground">Select to analyze</p>
+                        <h3 className="font-black text-xs uppercase tracking-widest text-primary">Market Assets</h3>
+                        <p className="text-[10px] text-muted-foreground font-medium">Select to analyze</p>
                     </div>
                     {pinnedIds && pinnedIds.length > 0 && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onToggleFilter?.(); }}
-                            className={`text-[10px] font-bold px-2 py-1 rounded border transition-colors ${showPinnedOnly ? "bg-primary text-primary-foreground border-primary" : "bg-transparent text-muted-foreground border-muted hover:border-primary"}`}
+                            className={`text-[9px] font-bold px-2 py-1 rounded border transition-all ${showPinnedOnly ? "bg-primary text-primary-foreground border-primary shadow-[0_0_10px_rgba(34,211,238,0.3)]" : "bg-transparent text-muted-foreground border-border/50 hover:border-primary hover:text-primary"}`}
                         >
-                            {showPinnedOnly ? "SHOW ALL" : "FAVORITES ONLY"}
+                            {showPinnedOnly ? "PINNED" : "ALL"}
                         </button>
                     )}
                 </div>
@@ -75,32 +75,31 @@ export function ETFTable({ etfs, selectedId, onSelect, realQuotes, pinnedIds, on
                 }}>
                     <input
                         type="text"
-                        placeholder="Add ticker (e.g. AAPL, BTC-USD)"
-                        className="flex-1 bg-muted/50 border-none rounded-lg px-3 py-2 text-xs focus:ring-1 ring-primary outline-none uppercase"
+                        placeholder="ADD TICKER (E.G. AAPL, BTC-USD)"
+                        className="flex-1 bg-background/50 border border-border/50 rounded-md px-3 py-1.5 text-[10px] font-bold tracking-wider focus:ring-1 ring-primary/50 outline-none uppercase placeholder:text-muted-foreground/50"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                     <button
                         type="submit"
-                        className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-primary/90 transition-colors uppercase"
+                        className="bg-primary hover:bg-primary/80 text-primary-foreground px-4 py-1.5 rounded-md text-[10px] font-black transition-all uppercase shadow-lg shadow-primary/10"
                     >
-                        Add
+                        ADD
                     </button>
                 </form>
             </div>
-            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted">
+            <div className="flex-1 overflow-y-auto no-scrollbar">
                 <table className="w-full text-sm">
-                    <thead className="sticky top-0 z-10 bg-card">
-                        <tr className="border-b bg-muted/30">
-                            <th className="w-10 px-4 py-3"></th>
-                            <th className="text-left px-6 py-3 font-medium text-muted-foreground">Symbol</th>
-                            <th className="text-left px-6 py-3 font-medium text-muted-foreground">Name</th>
-                            <th className="text-right px-6 py-3 font-medium text-muted-foreground">Price</th>
-                            <th className="text-right px-6 py-3 font-medium text-muted-foreground">Day Chg</th>
-                            <th className="text-right px-6 py-3 font-medium text-muted-foreground">YTD Chg</th>
+                    <thead className="sticky top-0 z-10 bg-card/80 backdrop-blur-md">
+                        <tr className="border-b border-border/50">
+                            <th className="w-8 px-2 py-2"></th>
+                            <th className="text-left px-3 py-2 text-[8px] font-bold text-muted-foreground uppercase tracking-widest">Symbol</th>
+                            <th className="text-left px-3 py-2 text-[8px] font-bold text-muted-foreground uppercase tracking-widest">Name</th>
+                            <th className="text-right px-3 py-2 text-[8px] font-bold text-muted-foreground uppercase tracking-widest">Price</th>
+                            <th className="text-right px-3 py-2 text-[8px] font-bold text-muted-foreground uppercase tracking-widest">Day Chg</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-border/20">
                         {etfs.map((etf) => {
                             const realQuote = realQuotes?.[etf.id];
                             const price = realQuote?.price || etf.price;
@@ -111,35 +110,32 @@ export function ETFTable({ etfs, selectedId, onSelect, realQuotes, pinnedIds, on
                                 <tr
                                     key={etf.id}
                                     onClick={() => onSelect(etf)}
-                                    className={`border-b cursor-pointer transition-colors hover:bg-muted/40 ${selectedId === etf.id ? "bg-primary/10" : ""
+                                    className={`cursor-pointer transition-all hover:bg-primary/5 border-l-2 ${selectedId === etf.id ? "bg-primary/10 border-primary" : "border-transparent"
                                         }`}
                                 >
-                                    <td className="px-4 py-3 text-center">
+                                    <td className="px-2 py-2 text-center w-8">
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 onTogglePin?.(etf.id);
                                             }}
-                                            className={`transition-colors ${isPinned ? "text-yellow-500 hover:text-yellow-600" : "text-muted-foreground/30 hover:text-muted-foreground"}`}
+                                            className={`transition-colors ${isPinned ? "text-yellow-500 hover:text-yellow-400" : "text-muted-foreground/20 hover:text-muted-foreground"}`}
                                         >
-                                            <Star className="h-4 w-4" fill={isPinned ? "currentColor" : "none"} />
+                                            <Star className="h-3 w-3" fill={isPinned ? "currentColor" : "none"} />
                                         </button>
                                     </td>
-                                    <td className="px-6 py-3 font-mono font-bold text-primary">{etf.id}</td>
-                                    <td className="px-6 py-3 text-foreground max-w-[200px]">
-                                        <div className="font-medium text-xs leading-tight">{etf.name}</div>
+                                    <td className="px-3 py-2">
+                                        <span className="font-black tracking-tighter text-primary text-sm">{etf.id}</span>
                                     </td>
-                                    <td className="px-6 py-3 text-right font-medium">
-                                        {formatCurrency(price || 0)}
+                                    <td className="px-3 py-2">
+                                        <div className="font-bold text-[9px] leading-tight text-foreground uppercase truncate max-w-[120px]">{etf.name}</div>
                                     </td>
-                                    <td className="px-6 py-3">
+                                    <td className="px-3 py-2 text-right">
+                                        <span className="font-black text-xs tracking-tight">{formatCurrency(price || 0)}</span>
+                                    </td>
+                                    <td className="px-3 py-2">
                                         <div className="flex justify-end">
                                             <ChangeCell value={change || 0} />
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-3">
-                                        <div className="flex justify-end">
-                                            <ChangeCell value={etf.ytdChange} />
                                         </div>
                                     </td>
                                 </tr>

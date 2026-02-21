@@ -4,7 +4,7 @@ import { MOCK_ETFS } from "@/lib/mock-etfs";
 
 export async function GET(request: NextRequest) {
     // Fetch all tickers from our mock list to provide real quotes
-    const tickers = [...MOCK_ETFS.map(etf => etf.id), "EURUSD", "USDCNY"];
+    const tickers = [...MOCK_ETFS.map(etf => etf.id), "EURUSD", "EURGBP", "EURCNY"];
 
     try {
         const quotes = await fetchYahooQuotesBatch(tickers);

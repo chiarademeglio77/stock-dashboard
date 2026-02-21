@@ -83,36 +83,43 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem }: Po
             return {
                 marketValue: acc.marketValue + marketValue,
                 dailyChange: acc.dailyChange + dailyChange,
-                totalProfit: acc.totalProfit + totalProfit
+                totalProfit: acc.totalProfit + totalProfit,
+                totalCostBasis: acc.totalCostBasis + (item.quantity * item.purchasePrice)
             };
-        }, { marketValue: 0, dailyChange: 0, totalProfit: 0 });
+        }, { marketValue: 0, dailyChange: 0, totalProfit: 0, totalCostBasis: 0 });
     }, [portfolio, realQuotes, etfs]);
 
     return (
-        <div className="bg-card rounded-xl border shadow-sm flex flex-col overflow-hidden w-full mt-6">
-            <div className="px-6 py-4 border-b flex justify-between items-center bg-primary/5">
+        <div className="glass-card flex flex-col overflow-hidden w-full mt-6 border-secondary/10 shadow-2xl relative">
+            {/* Design accents */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 blur-[100px] -z-10" />
+
+            <div className="px-6 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                 <div>
-                    <h3 className="font-bold text-lg text-primary uppercase tracking-wider">My Portfolio</h3>
-                    <p className="text-sm text-muted-foreground">Investment management and frozen returns</p>
+                    <h3 className="font-black text-xs text-secondary uppercase tracking-[0.2em]">Asset Management</h3>
+                    <p className="text-[10px] text-muted-foreground font-semibold mt-1">REAL-TIME PORTFOLIO TRACKING & RISK ANALYSIS</p>
                 </div>
-                <div className="bg-primary/10 px-3 py-1 rounded-full text-xs font-bold text-primary">
-                    10 ASSETS MAX
+                <div className="bg-secondary/10 px-3 py-1 rounded-full text-[9px] font-black text-secondary tracking-widest border border-secondary/20">
+                    LIVE DATA
                 </div>
             </div>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto no-scrollbar">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="border-b bg-muted/30">
-                            <th className="text-left px-6 py-4 font-bold text-muted-foreground uppercase text-xs">Symbol</th>
-                            <th className="text-right px-4 py-4 font-bold text-muted-foreground uppercase text-xs">Quantity</th>
-                            <th className="text-right px-4 py-4 font-bold text-muted-foreground uppercase text-xs">Avg. Cost (€)</th>
-                            <th className="text-right px-4 py-4 font-bold text-muted-foreground uppercase text-xs">Market Price (€)</th>
-                            <th className="text-right px-4 py-4 font-bold text-muted-foreground uppercase text-xs">Day Chg (%)</th>
-                            <th className="text-right px-4 py-4 font-bold text-muted-foreground uppercase text-xs">Day Chg (€)</th>
-                            <th className="text-right px-4 py-4 font-bold text-muted-foreground uppercase text-xs">Total P/L (€)</th>
-                            <th className="text-center px-4 py-4 font-bold text-muted-foreground uppercase text-xs">Freeze 1 (Date)</th>
-                            <th className="text-center px-6 py-4 font-bold text-muted-foreground uppercase text-xs">Freeze 2 (Date)</th>
-                            <th className="w-20"></th>
+                        <tr className="border-b border-slate-200 bg-slate-100/50">
+                            <th className="text-left px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Ticker</th>
+                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Holdings</th>
+                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Avg Cost</th>
+                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-slate-200/50">Total Cost</th>
+                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Market Pr.</th>
+                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Daily %</th>
+                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Daily Δ</th>
+                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Profit/Loss</th>
+                            <th className="text-left px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sector</th>
+                            <th className="text-left px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Region</th>
+                            <th className="text-center px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Snap 1</th>
+                            <th className="text-center px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Snap 2</th>
+                            <th className="w-12"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -126,46 +133,55 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem }: Po
                             const isEditing = editingId === item.id;
 
                             return (
-                                <tr key={item.id} className="border-b transition-colors hover:bg-muted/20">
+                                <tr key={item.id} className="border-b border-slate-100 transition-all hover:bg-slate-50">
                                     <td className="px-6 py-4">
-                                        <div className="font-bold text-primary font-mono">{item.id}</div>
-                                        <div className="text-[10px] text-muted-foreground truncate max-w-[120px]">{etf?.name}</div>
+                                        <div className="font-black text-secondary text-sm tracking-tighter">{item.id}</div>
+                                        <div className="text-[9px] text-muted-foreground font-bold uppercase truncate max-w-[120px] tracking-tight">{etf?.name}</div>
                                     </td>
                                     <td className="px-4 py-4 text-right">
                                         {isEditing ? (
                                             <input
                                                 type="number"
-                                                className="w-16 bg-background border rounded px-1 py-0.5 text-right"
+                                                className="w-16 bg-background border border-border/50 rounded px-1 py-0.5 text-right text-[10px] font-bold"
                                                 value={editValues.quantity}
                                                 onChange={(e) => setEditValues({ ...editValues, quantity: e.target.value })}
                                             />
                                         ) : (
-                                            <span className="font-medium text-lg">{formatNumber(item.quantity)}</span>
+                                            <span className="font-black text-foreground text-sm tracking-tight">{formatNumber(item.quantity)}</span>
                                         )}
                                     </td>
                                     <td className="px-4 py-4 text-right">
                                         {isEditing ? (
                                             <input
                                                 type="number"
-                                                className="w-20 bg-background border rounded px-1 py-0.5 text-right"
+                                                className="w-20 bg-background border border-border/50 rounded px-1 py-0.5 text-right text-[10px] font-bold"
                                                 value={editValues.purchasePrice}
                                                 onChange={(e) => setEditValues({ ...editValues, purchasePrice: e.target.value })}
                                             />
                                         ) : (
-                                            <span className="font-medium text-muted-foreground">{formatCurrency(item.purchasePrice)}</span>
+                                            <span className="font-bold text-muted-foreground text-[11px]">{formatCurrency(item.purchasePrice)}</span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-4 text-right font-medium text-lg italic bg-primary/5">
+                                    <td className="px-4 py-4 text-right bg-slate-50">
+                                        <span className="font-black text-slate-600 text-[11px]">{formatCurrency(item.quantity * item.purchasePrice)}</span>
+                                    </td>
+                                    <td className="px-4 py-4 text-right font-black text-sm bg-blue-50 text-blue-700 tracking-tighter">
                                         {formatCurrency(currentPrice)}
                                     </td>
-                                    <td className={`px-4 py-4 text-right font-bold text-lg ${dailyChangePercent >= 0 ? "text-green-500" : "text-red-500"}`}>
+                                    <td className={`px-4 py-4 text-right font-black text-sm ${dailyChangePercent >= 0 ? "text-green-600" : "text-red-600"}`}>
                                         {dailyChangePercent >= 0 ? "+" : ""}{dailyChangePercent.toFixed(2)}%
                                     </td>
-                                    <td className={`px-4 py-4 text-right font-bold text-lg ${dailyChangeValue >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                    <td className={`px-4 py-4 text-right font-bold text-sm ${dailyChangeValue >= 0 ? "text-green-500" : "text-red-500"}`}>
                                         {dailyChangeValue >= 0 ? "+" : ""}{formatCurrency(dailyChangeValue)}
                                     </td>
-                                    <td className={`px-4 py-4 text-right font-black text-lg whitespace-nowrap bg-muted/10 ${totalProfitValue >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                    <td className={`px-4 py-4 text-right font-black text-base whitespace-nowrap bg-slate-50 ${totalProfitValue >= 0 ? "text-green-600 shadow-[inset_0_0_10px_rgba(22,163,74,0.1)]" : "text-red-600 shadow-[inset_0_0_10px_rgba(220,38,38,0.1)]"}`}>
                                         {totalProfitValue >= 0 ? "+" : ""}{formatCurrency(totalProfitValue)}
+                                    </td>
+                                    <td className="px-4 py-4 text-left text-[9px] font-black text-muted-foreground uppercase tracking-tighter">
+                                        {etf?.sector || "—"}
+                                    </td>
+                                    <td className="px-4 py-4 text-left text-[9px] font-black text-muted-foreground uppercase tracking-tighter">
+                                        {etf?.region || "—"}
                                     </td>
                                     <td className="px-4 py-4">
                                         <div className="flex flex-col items-center gap-1">
@@ -225,7 +241,10 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem }: Po
                                     <span className="text-[10px] lowercase font-medium text-muted-foreground mt-1">Aggregated Metrics</span>
                                 </td>
                                 <td className="px-4 py-6 font-mono text-right text-muted-foreground/60">—</td>
-                                <td className="px-4 py-6 font-mono text-right text-muted-foreground/60">—</td>
+                                <td className="px-4 py-6 text-right font-black text-base text-slate-600 bg-slate-100/50 flex flex-col justify-center">
+                                    <span className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">Total Cost Basis</span>
+                                    <span>{formatCurrency(totals.totalCostBasis)}</span>
+                                </td>
                                 <td className="px-4 py-6 text-right font-bold text-lg bg-primary/10 flex flex-col justify-center">
                                     <span className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">Total Value</span>
                                     <span>{formatCurrency(totals.marketValue)}</span>
@@ -239,7 +258,7 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem }: Po
                                     <span className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">Total P/L</span>
                                     <span>{totals.totalProfit >= 0 ? "+" : ""}{formatCurrency(totals.totalProfit)}</span>
                                 </td>
-                                <td colSpan={3} className="bg-primary/5"></td>
+                                <td colSpan={5} className="bg-primary/5"></td>
                             </tr>
                         </tfoot>
                     )}
