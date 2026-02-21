@@ -47,14 +47,6 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
         setSelectedIds(next);
     };
 
-    const toggleAll = () => {
-        if (selectedIds.size === portfolio.length) {
-            setSelectedIds(new Set());
-        } else {
-            setSelectedIds(new Set(portfolio.map(p => p.id)));
-        }
-    };
-
     const handleEdit = (item: PortfolioItem) => {
         setEditingId(item.id);
         setEditValues({
@@ -117,35 +109,28 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                         <h3 className="font-black text-xs text-secondary uppercase tracking-[0.2em]">Asset Management</h3>
                         <p className="text-[10px] text-muted-foreground font-semibold mt-1">REAL-TIME PORTFOLIO TRACKING & RISK ANALYSIS</p>
                     </div>
+                </div>
+                <div className="flex items-center gap-3">
                     {selectedIds.size > 0 && (
                         <button
                             onClick={() => {
                                 onRemoveItems?.(Array.from(selectedIds));
                                 setSelectedIds(new Set());
                             }}
-                            className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-[10px] font-black tracking-widest transition-all shadow-lg shadow-red-500/20 uppercase"
+                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-[10px] font-black tracking-[0.2em] transition-all shadow-lg shadow-red-500/20 uppercase"
                         >
-                            <Trash2 className="h-3 w-3" />
-                            Delete {selectedIds.size} Selected
+                            Delete {selectedIds.size}
                         </button>
                     )}
-                </div>
-                <div className="bg-secondary/10 px-3 py-1 rounded-full text-[9px] font-black text-secondary tracking-widest border border-secondary/20">
-                    LIVE DATA
+                    <div className="bg-secondary/10 px-3 py-1 rounded-full text-[9px] font-black text-secondary tracking-widest border border-secondary/20">
+                        LIVE DATA
+                    </div>
                 </div>
             </div>
             <div className="overflow-x-auto no-scrollbar">
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="border-b border-slate-200 bg-slate-100/50">
-                            <th className="w-10 px-4 py-4">
-                                <input
-                                    type="checkbox"
-                                    className="accent-primary h-4 w-4"
-                                    checked={portfolio.length > 0 && selectedIds.size === portfolio.length}
-                                    onChange={toggleAll}
-                                />
-                            </th>
                             <th className="text-left px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Ticker</th>
                             <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Holdings</th>
                             <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Avg Cost</th>
@@ -159,7 +144,7 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                             <th className="text-left px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Region</th>
                             <th className="text-center px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Snap 1</th>
                             <th className="text-center px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Snap 2</th>
-                            <th className="w-24 px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Actions</th>
+                            <th className="w-24 px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -174,15 +159,7 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                             const isSelected = selectedIds.has(item.id);
 
                             return (
-                                <tr key={item.id} className={`border-b border-slate-100 transition-all ${isSelected ? "bg-primary/5 shadow-[inset_2px_0_0_hsl(var(--primary))]" : "hover:bg-slate-50"}`}>
-                                    <td className="px-4 py-4 text-center">
-                                        <input
-                                            type="checkbox"
-                                            className="accent-primary h-4 w-4"
-                                            checked={isSelected}
-                                            onChange={() => toggleSelection(item.id)}
-                                        />
-                                    </td>
+                                <tr key={item.id} className={`border-b border-slate-100 transition-all ${isSelected ? "bg-red-50 shadow-[inset_2px_0_0_#ef4444]" : "hover:bg-slate-50"}`}>
                                     <td className="px-6 py-4">
                                         <div className="font-black text-secondary text-sm tracking-tighter">{item.id}</div>
                                         <div className="text-[9px] text-muted-foreground font-bold uppercase truncate max-w-[120px] tracking-tight">{etf?.name}</div>
@@ -284,9 +261,9 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                                                         <Edit2 className="h-4 w-4" />
                                                     </button>
                                                     <button
-                                                        onClick={() => onRemoveItems?.([item.id])}
-                                                        className="text-muted-foreground hover:text-red-500 transition-colors"
-                                                        title="Remove from listed assets"
+                                                        onClick={() => toggleSelection(item.id)}
+                                                        className={`${isSelected ? "text-red-600" : "text-muted-foreground/40"} hover:text-red-500 transition-colors`}
+                                                        title="Select for deletion"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </button>
@@ -301,7 +278,7 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                     {portfolio.length > 0 && (
                         <tfoot>
                             <tr className="bg-primary/5 font-black border-t-2 border-primary/20">
-                                <td colSpan={2} className="px-6 py-6 uppercase text-[9px] tracking-widest text-primary">
+                                <td className="px-6 py-6 uppercase text-[9px] tracking-widest text-primary">
                                     <div className="flex flex-col justify-center h-full">
                                         <span>Portfolio Total</span>
                                         <span className="text-[8px] lowercase font-medium text-muted-foreground mt-0.5">Aggregated Metrics</span>
@@ -310,30 +287,18 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                                 <td className="px-4 py-6 font-mono text-right text-muted-foreground/60">—</td>
                                 <td className="px-4 py-6 font-mono text-right text-muted-foreground/60">—</td>
                                 <td className="px-4 py-6 text-right font-black text-base text-slate-700 bg-slate-200/50">
-                                    <div className="flex flex-col justify-center h-full">
-                                        <span className="text-[9px] uppercase text-slate-500 font-semibold mb-1">Total Cost Basis</span>
-                                        <span>{formatCurrency(totals.totalCostBasis)}</span>
-                                    </div>
+                                    <span>{formatCurrency(totals.totalCostBasis)}</span>
                                 </td>
                                 <td className="px-4 py-6 font-mono text-right text-muted-foreground/60">—</td>
                                 <td className="px-4 py-6 text-right font-bold text-lg bg-blue-100/50 text-blue-900 border-x border-blue-200/30">
-                                    <div className="flex flex-col justify-center h-full">
-                                        <span className="text-[9px] uppercase text-blue-700 font-semibold mb-1">Total Value</span>
-                                        <span>{formatCurrency(totals.marketValue)}</span>
-                                    </div>
+                                    <span>{formatCurrency(totals.marketValue)}</span>
                                 </td>
                                 <td className="px-4 py-6 font-mono text-right text-muted-foreground/60">—</td>
                                 <td className={`px-4 py-6 text-right text-lg ${totals.dailyChange >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                    <div className="flex flex-col justify-center h-full">
-                                        <span className="text-[9px] uppercase text-muted-foreground font-semibold mb-1">Total Day Δ</span>
-                                        <span>{totals.dailyChange >= 0 ? "+" : ""}{formatCurrency(totals.dailyChange)}</span>
-                                    </div>
+                                    <span>{totals.dailyChange >= 0 ? "+" : ""}{formatCurrency(totals.dailyChange)}</span>
                                 </td>
                                 <td className={`px-4 py-6 text-right text-lg ${totals.totalProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                    <div className="flex flex-col justify-center h-full">
-                                        <span className="text-[9px] uppercase text-muted-foreground font-semibold mb-1">Total P/L</span>
-                                        <span>{totals.totalProfit >= 0 ? "+" : ""}{formatCurrency(totals.totalProfit)}</span>
-                                    </div>
+                                    <span>{totals.totalProfit >= 0 ? "+" : ""}{formatCurrency(totals.totalProfit)}</span>
                                 </td>
                                 <td colSpan={5} className="bg-primary/5"></td>
                             </tr>
