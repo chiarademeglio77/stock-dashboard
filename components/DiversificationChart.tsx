@@ -74,7 +74,7 @@ export function DiversificationChart({ portfolio, etfs, realQuotes }: Diversific
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
             <div className="flex flex-col">
                 <h4 className="text-xs font-bold text-muted-foreground uppercase mb-4 text-center">Sector Distribution</h4>
-                <div className="flex-1 min-h-[200px]">
+                <div className="flex-1 min-h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
@@ -95,7 +95,7 @@ export function DiversificationChart({ portfolio, etfs, realQuotes }: Diversific
                                 verticalAlign="bottom"
                                 align="center"
                                 iconType="circle"
-                                wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
+                                wrapperStyle={{ fontSize: '10px', paddingTop: '20px', paddingBottom: '10px' }}
                             />
                         </PieChart>
                     </ResponsiveContainer>
@@ -104,7 +104,7 @@ export function DiversificationChart({ portfolio, etfs, realQuotes }: Diversific
 
             <div className="flex flex-col">
                 <h4 className="text-xs font-bold text-muted-foreground uppercase mb-4 text-center">Geographic Distribution</h4>
-                <div className="flex-1 min-h-[200px]">
+                <div className="flex-1 min-h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
@@ -125,7 +125,7 @@ export function DiversificationChart({ portfolio, etfs, realQuotes }: Diversific
                                 verticalAlign="bottom"
                                 align="center"
                                 iconType="circle"
-                                wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
+                                wrapperStyle={{ fontSize: '10px', paddingTop: '20px', paddingBottom: '10px' }}
                             />
                         </PieChart>
                     </ResponsiveContainer>
