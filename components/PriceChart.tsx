@@ -27,6 +27,7 @@ interface PriceChartProps {
     comparisonDataMap?: Record<string, AnalysisResult[]>;
     mainAssetId?: string;
     selectedPeriod?: number | "YTD";
+    onPointClick?: (date: string, x: number, y: number) => void;
 }
 
 export function PriceChart({
@@ -36,7 +37,8 @@ export function PriceChart({
     onZoomChange,
     comparisonDataMap = {},
     mainAssetId = "Asset",
-    selectedPeriod = 365
+    selectedPeriod = 365,
+    onPointClick
 }: PriceChartProps) {
     const [showRSI, setShowRSI] = useState(false);
     const [showMACD, setShowMACD] = useState(false);
@@ -193,7 +195,17 @@ export function PriceChart({
                 {/* Main Price Chart */}
                 <div style={{ height: showRSI && showMACD ? '60%' : (showRSI || showMACD ? '75%' : '100%'), minHeight: '400px' }}>
                     <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={normalizedData} syncId="stockSync" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <ComposedChart
+                            data={normalizedData}
+                            syncId="stockSync"
+                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                            onClick={(state: any) => {
+                                if (onPointClick && state?.activeLabel) {
+                                    onPointClick(state.activeLabel, state.chartX, state.chartY);
+                                }
+                            }}
+                            className="cursor-pointer"
+                        >
                             <defs>
                                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#2563eb" stopOpacity={0.25} />

@@ -46,8 +46,15 @@ export const YAHOO_TICKER_MAP: Record<string, string> = {
     "G": "G.MI"
 };
 
+export function resolveSymbol(ticker: string): string {
+    if (YAHOO_TICKER_MAP[ticker]) return YAHOO_TICKER_MAP[ticker];
+    if (ticker.includes('.') || ticker.includes('^') || ticker.includes('=X')) return ticker;
+    // Default to Milan exchange (.MI) for European users if ticker is ambiguous
+    return `${ticker}.MI`;
+}
+
 export async function fetchYahooHistoricalData(ticker: string, periodDays: number = 365, interval: string = '1d') {
-    const symbol = YAHOO_TICKER_MAP[ticker] || ticker;
+    const symbol = resolveSymbol(ticker);
 
     const endDate = new Date();
     const startDate = new Date();
@@ -90,7 +97,7 @@ export async function fetchYahooHistoricalData(ticker: string, periodDays: numbe
 }
 
 export async function fetchYahooQuote(ticker: string) {
-    const symbol = YAHOO_TICKER_MAP[ticker] || ticker;
+    const symbol = resolveSymbol(ticker);
     try {
         const quote = await yahooFinance.quote(symbol) as any;
         return {
@@ -112,7 +119,7 @@ export async function fetchYahooQuotesBatch(tickers: string[]) {
     // Create reversed map for mapping back results
     const reverseMap: Record<string, string> = {};
     const symbols = tickers.map(t => {
-        const s = YAHOO_TICKER_MAP[t] || (t.includes('.') ? t : `${t}.MI`);
+        const s = resolveSymbol(t);
         reverseMap[s] = t;
         return s;
     });
@@ -155,7 +162,7 @@ export async function searchYahooTicker(query: string) {
 }
 
 export async function fetchYahooYTDData(ticker: string) {
-    const symbol = YAHOO_TICKER_MAP[ticker] || ticker;
+    const symbol = resolveSymbol(ticker);
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 1);
 
@@ -187,7 +194,7 @@ export async function fetchYahooYTDData(ticker: string) {
 }
 
 export async function fetchYahooNews(ticker: string) {
-    const symbol = YAHOO_TICKER_MAP[ticker] || ticker;
+    const symbol = resolveSymbol(ticker);
     try {
         const result = await yahooFinance.search(symbol, {
             newsCount: 5,

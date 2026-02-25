@@ -8,6 +8,7 @@ interface PortfolioItem {
     id: string;
     quantity: number;
     purchasePrice: number;
+    purchaseDate?: string;
     freeze1?: { value: number; date: string };
     freeze2?: { value: number; date: string };
 }
@@ -37,7 +38,7 @@ const formatNumber = (val: number) => {
 
 export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRemoveItems }: PortfolioTableProps) {
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [editValues, setEditValues] = useState<{ quantity: string; purchasePrice: string }>({ quantity: "", purchasePrice: "" });
+    const [editValues, setEditValues] = useState<{ quantity: string; purchasePrice: string; purchaseDate: string }>({ quantity: "", purchasePrice: "", purchaseDate: "" });
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const toggleSelection = (id: string) => {
@@ -51,7 +52,8 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
         setEditingId(item.id);
         setEditValues({
             quantity: item.quantity.toString(),
-            purchasePrice: item.purchasePrice.toString()
+            purchasePrice: item.purchasePrice.toString(),
+            purchaseDate: item.purchaseDate || new Date().toISOString().split('T')[0]
         });
     };
 
@@ -60,7 +62,8 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
             ...portfolio.find(p => p.id === id)!,
             id,
             quantity: parseFloat(editValues.quantity) || 0,
-            purchasePrice: parseFloat(editValues.purchasePrice) || 0
+            purchasePrice: parseFloat(editValues.purchasePrice) || 0,
+            purchaseDate: editValues.purchaseDate || new Date().toISOString().split('T')[0]
         });
         setEditingId(null);
     };
@@ -131,20 +134,21 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                 <table className="w-full text-sm tabular-nums w-max min-w-full">
                     <thead>
                         <tr className="border-b border-slate-200 bg-slate-100/50">
-                            <th className="text-left px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Ticker</th>
-                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Holdings</th>
-                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Avg Cost</th>
-                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-slate-200/50">Total Cost</th>
-                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Market Pr.</th>
-                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-blue-100/50">Total Value</th>
-                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Daily %</th>
-                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Daily Δ</th>
-                            <th className="text-right px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Profit/Loss</th>
-                            <th className="text-left px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sector</th>
-                            <th className="text-left px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Region</th>
-                            <th className="text-center px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Snap 1</th>
-                            <th className="text-center px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Snap 2</th>
-                            <th className="w-24 px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Action</th>
+                            <th className="w-20 px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest text-center">Action</th>
+                            <th className="text-left px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">Ticker</th>
+                            <th className="text-left px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">Buy Date</th>
+                            <th className="text-right px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">Holdings</th>
+                            <th className="text-right px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">Avg Cost</th>
+                            <th className="text-right px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest bg-slate-200/40">Total Cost</th>
+                            <th className="text-right px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">Market Pr.</th>
+                            <th className="text-right px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest bg-blue-100/40">Total Value</th>
+                            <th className="text-right px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">Daily %</th>
+                            <th className="text-right px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">Daily Δ</th>
+                            <th className="text-right px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">Profit/Loss</th>
+                            <th className="text-left px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">Sector</th>
+                            <th className="text-left px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">Region</th>
+                            <th className="text-center px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">Snap 1</th>
+                            <th className="text-center px-4 py-3.5 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">Snap 2</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -161,55 +165,90 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                             return (
                                 <tr key={item.id} className={`border-b border-slate-100 transition-all ${isSelected ? "bg-red-50 shadow-[inset_2px_0_0_#ef4444]" : "hover:bg-slate-50"}`}>
                                     <td className="px-6 py-4">
-                                        <div className="font-black text-secondary text-sm tracking-tighter">{item.id}</div>
-                                        <div className="text-[9px] text-muted-foreground font-bold uppercase truncate max-w-[120px] tracking-tight">{etf?.name}</div>
+                                        <div className="flex items-center justify-center gap-2">
+                                            {isEditing ? (
+                                                <div className="flex gap-1">
+                                                    <button onClick={() => handleSave(item.id)} className="text-green-500 hover:text-green-600"><Check className="h-4 w-4" /></button>
+                                                    <button onClick={() => setEditingId(null)} className="text-red-500 hover:text-red-600"><X className="h-4 w-4" /></button>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <button onClick={() => handleEdit(item)} className="text-muted-foreground hover:text-primary transition-colors">
+                                                        <Edit2 className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => toggleSelection(item.id)}
+                                                        className={`${isSelected ? "text-red-600" : "text-muted-foreground/40"} hover:text-red-500 transition-colors`}
+                                                        title="Select for deletion"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <div className="font-bold text-secondary text-sm tracking-tight">{item.id}</div>
+                                        <div className="text-[10px] text-muted-foreground font-semibold uppercase truncate max-w-[120px] tracking-tight">{etf?.name}</div>
+                                    </td>
+                                    <td className="px-4 py-4 text-left">
+                                        {isEditing ? (
+                                            <input
+                                                type="date"
+                                                className="w-24 bg-background border border-border/50 rounded px-1 py-0.5 text-left text-[10px] font-semibold"
+                                                value={editValues.purchaseDate}
+                                                onChange={(e) => setEditValues({ ...editValues, purchaseDate: e.target.value })}
+                                            />
+                                        ) : (
+                                            <span className="font-semibold text-muted-foreground/80 text-[11px]">{item.purchaseDate || "—"}</span>
+                                        )}
                                     </td>
                                     <td className="px-4 py-4 text-right">
                                         {isEditing ? (
                                             <input
                                                 type="number"
-                                                className="w-16 bg-background border border-border/50 rounded px-1 py-0.5 text-right text-[10px] font-bold"
+                                                className="w-16 bg-background border border-border/50 rounded px-1 py-0.5 text-right text-[10px] font-semibold"
                                                 value={editValues.quantity}
                                                 onChange={(e) => setEditValues({ ...editValues, quantity: e.target.value })}
                                             />
                                         ) : (
-                                            <span className="font-black text-foreground text-sm tracking-tight">{formatNumber(item.quantity)}</span>
+                                            <span className="font-bold text-foreground text-sm tracking-tight">{formatNumber(item.quantity)}</span>
                                         )}
                                     </td>
                                     <td className="px-4 py-4 text-right">
                                         {isEditing ? (
                                             <input
                                                 type="number"
-                                                className="w-20 bg-background border border-border/50 rounded px-1 py-0.5 text-right text-[10px] font-bold"
+                                                className="w-20 bg-background border border-border/50 rounded px-1 py-0.5 text-right text-[10px] font-semibold"
                                                 value={editValues.purchasePrice}
                                                 onChange={(e) => setEditValues({ ...editValues, purchasePrice: e.target.value })}
                                             />
                                         ) : (
-                                            <span className="font-bold text-muted-foreground text-[11px]">{formatCurrency(item.purchasePrice)}</span>
+                                            <span className="font-semibold text-muted-foreground/80 text-[11px]">{formatCurrency(item.purchasePrice)}</span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-4 text-right bg-slate-50">
-                                        <span className="font-black text-slate-600 text-[11px]">{formatCurrency(item.quantity * item.purchasePrice)}</span>
+                                    <td className="px-4 py-4 text-right bg-slate-50/50">
+                                        <span className="font-bold text-slate-600 text-[11px]">{formatCurrency(item.quantity * item.purchasePrice)}</span>
                                     </td>
-                                    <td className="px-4 py-4 text-right font-black text-sm bg-blue-50/50 text-blue-700 tracking-tighter">
+                                    <td className="px-4 py-4 text-right font-bold text-sm bg-blue-50/30 text-blue-700 tracking-tight">
                                         {formatCurrency(currentPrice)}
                                     </td>
-                                    <td className="px-4 py-4 text-right font-black text-sm bg-blue-100/50 text-blue-900 tracking-tighter">
+                                    <td className="px-4 py-4 text-right font-bold text-sm bg-blue-100/30 text-blue-900 tracking-tight">
                                         {formatCurrency(item.quantity * currentPrice)}
                                     </td>
-                                    <td className={`px-4 py-4 text-right font-black text-sm ${dailyChangePercent >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                    <td className={`px-4 py-4 text-right font-bold text-sm ${dailyChangePercent >= 0 ? "text-green-600" : "text-red-600"}`}>
                                         {dailyChangePercent >= 0 ? "+" : ""}{dailyChangePercent.toFixed(2)}%
                                     </td>
-                                    <td className={`px-4 py-4 text-right font-bold text-sm ${dailyChangeValue >= 0 ? "text-green-500" : "text-red-500"}`}>
+                                    <td className={`px-4 py-4 text-right font-semibold text-sm ${dailyChangeValue >= 0 ? "text-green-500" : "text-red-500"}`}>
                                         {dailyChangeValue >= 0 ? "+" : ""}{formatCurrency(dailyChangeValue)}
                                     </td>
-                                    <td className={`px-4 py-4 text-right font-black text-base whitespace-nowrap bg-slate-50 ${totalProfitValue >= 0 ? "text-green-600 shadow-[inset_0_0_10px_rgba(22,163,74,0.1)]" : "text-red-600 shadow-[inset_0_0_10px_rgba(220,38,38,0.1)]"}`}>
+                                    <td className={`px-4 py-4 text-right font-bold text-sm whitespace-nowrap bg-slate-50/50 ${totalProfitValue >= 0 ? "text-green-600 shadow-[inset_0_0_10px_rgba(22,163,74,0.05)]" : "text-red-600 shadow-[inset_0_0_10px_rgba(220,38,38,0.05)]"}`}>
                                         {totalProfitValue >= 0 ? "+" : ""}{formatCurrency(totalProfitValue)}
                                     </td>
-                                    <td className="px-4 py-4 text-left text-[9px] font-black text-muted-foreground uppercase tracking-tighter">
+                                    <td className="px-4 py-4 text-left text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-tight">
                                         {etf?.sector || "—"}
                                     </td>
-                                    <td className="px-4 py-4 text-left text-[9px] font-black text-muted-foreground uppercase tracking-tighter">
+                                    <td className="px-4 py-4 text-left text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-tight">
                                         {etf?.region || "—"}
                                     </td>
                                     <td className="px-4 py-4">
@@ -248,59 +287,38 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-4 py-4">
-                                        <div className="flex items-center justify-center gap-2">
-                                            {isEditing ? (
-                                                <div className="flex gap-1">
-                                                    <button onClick={() => handleSave(item.id)} className="text-green-500 hover:text-green-600"><Check className="h-4 w-4" /></button>
-                                                    <button onClick={() => setEditingId(null)} className="text-red-500 hover:text-red-600"><X className="h-4 w-4" /></button>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <button onClick={() => handleEdit(item)} className="text-muted-foreground hover:text-primary transition-colors">
-                                                        <Edit2 className="h-4 w-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => toggleSelection(item.id)}
-                                                        className={`${isSelected ? "text-red-600" : "text-muted-foreground/40"} hover:text-red-500 transition-colors`}
-                                                        title="Select for deletion"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </td>
                                 </tr>
                             );
                         })}
                     </tbody>
                     {portfolio.length > 0 && (
                         <tfoot>
-                            <tr className="bg-primary/5 font-black border-t-2 border-primary/20">
-                                <td className="px-6 py-6 uppercase text-[9px] tracking-widest text-primary">
+                            <tr className="bg-primary/5 font-bold border-t-2 border-primary/20">
+                                <td className="px-4 py-5 font-mono text-center text-muted-foreground/40 text-[10px]">—</td>
+                                <td className="px-4 py-5 uppercase text-[10px] tracking-widest text-primary">
                                     <div className="flex flex-col justify-center h-full">
                                         <span>Portfolio Total</span>
-                                        <span className="text-[8px] lowercase font-medium text-muted-foreground mt-0.5">Aggregated Metrics</span>
+                                        <span className="text-[9px] lowercase font-medium text-muted-foreground/70 mt-0.5">Aggregated Metrics</span>
                                     </div>
                                 </td>
-                                <td className="px-4 py-6 font-mono text-center text-muted-foreground/60">—</td>
-                                <td className="px-4 py-6 font-mono text-center text-muted-foreground/60">—</td>
-                                <td className="px-4 py-6 text-right font-black text-base text-slate-700 bg-slate-200/50">
+                                <td className="px-4 py-5 font-mono text-center text-muted-foreground/40 text-[10px]">—</td>
+                                <td className="px-4 py-5 font-mono text-center text-muted-foreground/40 text-[10px]">—</td>
+                                <td className="px-4 py-5 font-mono text-center text-muted-foreground/40 text-[10px]">—</td>
+                                <td className="px-4 py-5 text-right font-bold text-sm text-slate-700 bg-slate-200/40">
                                     <span>{formatCurrency(totals.totalCostBasis)}</span>
                                 </td>
-                                <td className="px-4 py-6 font-mono text-center text-muted-foreground/60">—</td>
-                                <td className="px-4 py-6 text-right font-bold text-lg bg-blue-100/50 text-blue-900 border-x border-blue-200/30">
+                                <td className="px-4 py-5 font-mono text-center text-muted-foreground/40 text-[10px]">—</td>
+                                <td className="px-4 py-5 text-right font-bold text-sm bg-blue-100/40 text-blue-900 border-x border-blue-200/20">
                                     <span>{formatCurrency(totals.marketValue)}</span>
                                 </td>
-                                <td className="px-4 py-6 font-mono text-center text-muted-foreground/60">—</td>
-                                <td className={`px-4 py-6 text-right text-lg ${totals.dailyChange >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                <td className="px-4 py-5 font-mono text-center text-muted-foreground/40 text-[10px]">—</td>
+                                <td className={`px-4 py-5 text-right text-sm ${totals.dailyChange >= 0 ? "text-green-600" : "text-red-600"}`}>
                                     <span>{totals.dailyChange >= 0 ? "+" : ""}{formatCurrency(totals.dailyChange)}</span>
                                 </td>
-                                <td className={`px-4 py-6 text-right text-lg ${totals.totalProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                <td className={`px-4 py-5 text-right text-sm ${totals.totalProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
                                     <span>{totals.totalProfit >= 0 ? "+" : ""}{formatCurrency(totals.totalProfit)}</span>
                                 </td>
-                                <td colSpan={5} className="bg-primary/5"></td>
+                                <td colSpan={6} className="bg-primary/5"></td>
                             </tr>
                         </tfoot>
                     )}

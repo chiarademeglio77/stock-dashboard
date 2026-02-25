@@ -14,6 +14,8 @@ import { NewsSection } from "@/components/NewsSection";
 import { DiversificationChart } from "@/components/DiversificationChart";
 import { DividendSection } from "@/components/DividendSection";
 import { BacktestingTool } from "@/components/BacktestingTool";
+import { PortfolioPerformanceChart } from "@/components/PortfolioPerformanceChart";
+import { NewsStickyNote } from "@/components/NewsStickyNote";
 import { TrendingUp, DollarSign, Activity, BarChart3, Download, ShieldAlert, Globe } from "lucide-react";
 
 const formatCurrency = (val: number, decimals = 2) => {
@@ -46,6 +48,8 @@ export default function Home() {
   const [comparisonDataMap, setComparisonDataMap] = useState<Record<string, AnalysisResult[]>>({});
   const [marketBenchmarkData, setMarketBenchmarkData] = useState<AnalysisResult[]>([]);
   const [compLoading, setCompLoading] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [stickyNotes, setStickyNotes] = useState<{ id: string, date: string, ticker: string, fullAssetName: string, marketContext: string, x: number, y: number }[]>([]);
 
   // Load selection and portfolio from localStorage
   useEffect(() => {
@@ -60,27 +64,25 @@ export default function Home() {
 
     const savedCustom = localStorage.getItem("custom_tickers");
     if (savedCustom) setCustomEtfs(JSON.parse(savedCustom));
+
+    // Delay setting isLoaded to ensure state updates from localStorage are committed
+    // before the persistence effect starts watching.
+    setTimeout(() => setIsLoaded(true), 150);
   }, []);
 
-  // Persist pinnedIds
+  // Consolidated Persistence Effect
   useEffect(() => {
-    localStorage.setItem("pinned_tickers", JSON.stringify(pinnedIds));
-  }, [pinnedIds]);
+    if (!isLoaded) return;
 
-  // Persist portfolio
-  useEffect(() => {
-    localStorage.setItem("user_portfolio", JSON.stringify(portfolio));
-  }, [portfolio]);
-
-  // Persist filter
-  useEffect(() => {
-    localStorage.setItem("show_pinned_only", showPinnedOnly.toString());
-  }, [showPinnedOnly]);
-
-  // Persist custom tickers
-  useEffect(() => {
-    localStorage.setItem("custom_tickers", JSON.stringify(customEtfs));
-  }, [customEtfs]);
+    try {
+      localStorage.setItem("pinned_tickers", JSON.stringify(pinnedIds));
+      localStorage.setItem("user_portfolio", JSON.stringify(portfolio));
+      localStorage.setItem("show_pinned_only", showPinnedOnly.toString());
+      localStorage.setItem("custom_tickers", JSON.stringify(customEtfs));
+    } catch (e) {
+      console.error("Failed to save to localStorage:", e);
+    }
+  }, [pinnedIds, portfolio, showPinnedOnly, customEtfs, isLoaded]);
 
   const togglePin = (id: string) => {
     setPinnedIds(prev =>
@@ -94,7 +96,7 @@ export default function Home() {
       } else {
         if (prev.length >= 10) return prev; // Limit to 10
         // Find existing cost or default to 0
-        return [...prev, { id, quantity: 1, purchasePrice: 0 }];
+        return [...prev, { id, quantity: 1, purchasePrice: 0, purchaseDate: new Date().toISOString().split('T')[0] }];
       }
     });
   };
@@ -623,7 +625,48 @@ export default function Home() {
                     comparisonDataMap={comparisonDataMap}
                     mainAssetId={selectedETF.id}
                     selectedPeriod={selectedPeriod}
+                    onPointClick={(date, x, y) => {
+                      const id = Math.random().toString(36).substr(2, 9);
+
+                      // Determine Market Context based on region
+                      let marketContext = "Market";
+                      const region = selectedETF.region?.toLowerCase() || "";
+                      if (region.includes("italy")) marketContext = "MIB";
+                      else if (region.includes("usa")) marketContext = "S&P 500";
+                      else if (region.includes("europe")) marketContext = "MSCI Europe";
+                      else if (region.includes("uk")) marketContext = "FTSE 100";
+                      else if (region.includes("global")) marketContext = "World";
+
+                      setStickyNotes(prev => [...prev, {
+                        id,
+                        date,
+                        ticker: selectedETF.id,
+                        fullAssetName: selectedETF.name,
+                        marketContext,
+                        x,
+                        y
+                      }]);
+                    }}
                   />
+
+                  {/* Sticky Notes Container */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {stickyNotes.map((note, idx) => (
+                      <div key={note.id} className="pointer-events-auto">
+                        <NewsStickyNote
+                          id={note.id}
+                          date={note.date}
+                          ticker={note.ticker}
+                          fullAssetName={note.fullAssetName}
+                          marketContext={note.marketContext}
+                          x={note.x}
+                          y={note.y}
+                          colorIndex={idx}
+                          onClose={(id) => setStickyNotes(prev => prev.filter(n => n.id !== id))}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-1">
@@ -684,6 +727,8 @@ export default function Home() {
 
           {/* Bottom Section: Unified Analytics (Full 9-col width) */}
           <div className="flex flex-col space-y-6">
+            <PortfolioPerformanceChart portfolio={portfolio} etfs={[...MOCK_ETFS, ...customEtfs]} />
+
             <PortfolioTable
               etfs={[...MOCK_ETFS, ...customEtfs]}
               realQuotes={realQuotes}
