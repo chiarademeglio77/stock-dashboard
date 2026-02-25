@@ -49,8 +49,8 @@ export const YAHOO_TICKER_MAP: Record<string, string> = {
 export function resolveSymbol(ticker: string): string {
     if (YAHOO_TICKER_MAP[ticker]) return YAHOO_TICKER_MAP[ticker];
     if (ticker.includes('.') || ticker.includes('^') || ticker.includes('=X')) return ticker;
-    // Default to Milan exchange (.MI) for European users if ticker is ambiguous
-    return `${ticker}.MI`;
+    // No longer force .MI suffix. Trust the ticker as is or let search handle it.
+    return ticker;
 }
 
 export async function fetchYahooHistoricalData(ticker: string, periodDays: number = 365, interval: string = '1d') {
