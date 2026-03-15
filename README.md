@@ -1,19 +1,21 @@
-# 📊 Historical Multi-Market Dashboard
+# 📊 Chiara Finance Terminal
 
-An interactive and modern financial dashboard built with **Next.js**, providing real-time and historical analysis for ETFs and stocks listed on the **Borsa Italiana (Milan)**.
+A professional-grade, interactive financial dashboard built with **Next.js**, designed to provide real-time portfolio management, market comparison, and historical financial analysis. This tool empowers users to track their favorite assets, backtest investment strategies, and analyze market trends.
 
 ![Version 1.0](https://img.shields.io/badge/Version-1.0-blue)
 ![Next.js](https://img.shields.io/badge/Framework-Next.js-black)
 ![Tailwind CSS](https://img.shields.io/badge/Styling-TailwindCSS-38B2AC)
 ![Recharts](https://img.shields.io/badge/Charts-Recharts-FF6384)
 
-## ✨ Features
+## ✨ Tool Capabilities & Features
 
-- **Real-Time Market Data**: Integrated with Yahoo Finance for up-to-date quotes and accurate historical data.
-- **Automatic Technical Analysis**: Instant calculation of Simple Moving Averages (SMA), Exponential Moving Averages (EMA), and Standard Deviation directly in the browser.
-- **Interactive Interface**: Zoomable charts with selection persistence and fluid time period management (30d, 90d, 1y, Max).
-- **Borsa Italiana Focus**: Full support for Milan tickers (e.g., `VUSA.MI`, `SWDA.MI`, `FTSEMIB.MI`) with prices displayed in **Euro (€)**.
-- **Performance & Caching**: Smart caching system (1 hour) to optimize API requests and ensure extreme speed.
+- **Personalized Portfolio Management**: Users can search for specific exchange-traded funds (ETFs) or stocks, pin them to their watchlist, and build a local portfolio with custom holdings, purchase dates, and average costs.
+- **Deep Market Analytics & Visualization**: Integrated with Yahoo Finance to fetch real-time and historical pricing. Dynamic, zoomable Recharts graphs render time-series data with smooth transitions across multiple timeframes (30d, 90d, 1y, YTD, Max).
+- **Multi-Asset Comparison**: Select multiple assets from your portfolio to overlay their historical performance on a single, synchronized comparison chart.
+- **Backtesting Engine**: Simulate historical investments. Enter an initial capital amount and an entry date to calculate absolute yields, periodic performance, and theoretical growth alongside market benchmarks like the S&P 500.
+- **Sticky Note Market Context**: Drop contextual sticky notes directly onto your dashboard to record market events, investment thesis, or qualitative trading notes.
+- **Local Browser Persistence**: Your custom watchlist, portfolio shares, and notes are securely stored in your browser's `localStorage`, meaning your data never leaves your device and automatically persists between sessions.
+- **Borsa Italiana & Global Focus**: Primarily designed for tracking Milan-listed assets (e.g., `SWDA.MI`, `VUSA.MI`, `EGIN.MI`) with prices shown in Euro (€), alongside major global FX crosses (EUR/USD, EUR/GBP, etc.).
 
 ## 🚀 Tech Stack
 
