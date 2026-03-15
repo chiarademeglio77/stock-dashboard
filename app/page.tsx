@@ -173,11 +173,12 @@ export default function Home() {
     return ((data[data.length - 1].close / firstOfYear.close) - 1) * 100;
   }, [data]);
 
-  // Fetch all real quotes for the table
+  // Fetch all real quotes for the table, depending on customEtfs length
   useEffect(() => {
     async function fetchQuotes() {
       try {
-        const response = await fetch('/api/market-data/batch', { cache: 'no-store' });
+        const customParam = customEtfs.length > 0 ? `?symbols=${customEtfs.map(e => encodeURIComponent(e.id)).join(',')}` : '';
+        const response = await fetch(`/api/market-data/batch${customParam}`, { cache: 'no-store' });
         const quotes = await response.json();
 
         // Safety check: ensure 'quotes' is an array before calling reduce
@@ -210,6 +211,13 @@ export default function Home() {
     }
     fetchQuotes();
 
+    // Refresh every 5 minutes
+    const interval = setInterval(fetchQuotes, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [customEtfs]); // Re-run and set interval if customEtfs change
+
+  // Fetch One-Time Market benchmark and FX YTD
+  useEffect(() => {
     // Fetch SPY for market beta
     async function fetchMarketBenchmark() {
       try {
@@ -242,10 +250,6 @@ export default function Home() {
       setFxYtdData(results);
     }
     fetchFxYtd();
-
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchQuotes, 5 * 60 * 1000);
-    return () => clearInterval(interval);
   }, []);
 
   // Fetch comparison data when comparisonETFs or period changes
