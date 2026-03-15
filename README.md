@@ -43,7 +43,8 @@ A professional-grade, interactive financial dashboard built with **Next.js**, de
 
 ## 💼 Portfolio Highlight
 
-This project demonstrates proficiency in handling external APIs, visualizing complex data sets, and building dynamic, professional-grade user interfaces within the Next.js ecosystem.
+This project (https://stock-dashboard-mauve-seven.vercel.app/) demonstrates proficiency in handling external APIs, visualizing complex data sets, and building dynamic, professional-grade user interfaces within the Next.js ecosystem.
+
 <img src="Dashboard%20Stock.jpg" width="800">
 ---
 Created by [Chiara De Meglio](https://github.com/chiarademeglio77)
