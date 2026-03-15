@@ -1,4 +1,4 @@
-# 📊 Chiara Finance Terminal
+# 📊 Chiara Finance Terminal https://stock-dashboard-mauve-seven.vercel.app/
 
 A professional-grade, interactive financial dashboard built with **Next.js**, designed to provide real-time portfolio management, market comparison, and historical financial analysis. This tool empowers users to track their favorite assets, backtest investment strategies, and analyze market trends.
 
