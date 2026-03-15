@@ -11,22 +11,26 @@ interface DividendSectionProps {
 
 // Mock dividend data (yield per share per year)
 const MOCK_DIVIDENDS: Record<string, { yield: number, months: number[] }> = {
-    "ETFMIB": { yield: 0.85, months: [5, 11] },
-    "XBKA": { yield: 0.45, months: [4, 10] },
-    "VEUR": { yield: 1.20, months: [3, 6, 9, 12] },
-    "VUSA": { yield: 1.15, months: [3, 6, 9, 12] },
-    "SWDA": { yield: 0.95, months: [6, 12] },
-    "IITB": { yield: 3.50, months: [1, 7] },
-    "IDRE": { yield: 0.90, months: [2, 5, 8, 11] },
-    "UCG": { yield: 2.10, months: [4] }, // UniCredit
-    "ISP": { yield: 0.28, months: [5, 11] }, // Intesa
-    "ENI": { yield: 0.94, months: [3, 5, 9, 11] },
-    "ENEL": { yield: 0.43, months: [1, 7] },
-    "STLAM": { yield: 1.55, months: [4] }, // Stellantis
-    "G": { yield: 1.28, months: [5] }, // Generali
-    "RACE": { yield: 2.44, months: [5] }, // Ferrari
-    "RBOT": { yield: 0.05, months: [6] },
-    "SEML": { yield: 0.12, months: [6] },
+    "ETFMIB.MI": { yield: 0.85, months: [5, 11] },
+    "XBKA.MI": { yield: 0.45, months: [4, 10] },
+    "VEUR.MI": { yield: 1.20, months: [3, 6, 9, 12] },
+    "VUSA.MI": { yield: 1.15, months: [3, 6, 9, 12] },
+    "SWDA.MI": { yield: 0.95, months: [6, 12] },
+    "IITB.MI": { yield: 3.50, months: [1, 7] },
+    "IDRE.MI": { yield: 0.90, months: [2, 5, 8, 11] },
+    "UCG.MI": { yield: 2.10, months: [4] }, // UniCredit
+    "ISP.MI": { yield: 0.28, months: [5, 11] }, // Intesa
+    "ENI.MI": { yield: 0.94, months: [3, 5, 9, 11] },
+    "ENEL.MI": { yield: 0.43, months: [1, 7] },
+    "STLAM.MI": { yield: 1.55, months: [4] }, // Stellantis
+    "G.MI": { yield: 1.28, months: [5] }, // Generali
+    "RACE.MI": { yield: 2.44, months: [5] }, // Ferrari
+    "SRG.MI": { yield: 0.28, months: [1, 6] }, // Snam
+    "TRN.MI": { yield: 0.32, months: [6, 11] }, // Terna
+    "PST.MI": { yield: 0.65, months: [6, 11] }, // Poste
+    "LDO.MI": { yield: 0.24, months: [6] }, // Leonardo
+    "TEN.MI": { yield: 0.34, months: [5, 11] }, // Tenaris
+    "CPR.MI": { yield: 0.06, months: [5] }, // Campari
 };
 
 export function DividendSection({ portfolio, etfs }: DividendSectionProps) {

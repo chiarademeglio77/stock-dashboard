@@ -1,58 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchYahooQuote, fetchYahooYTDData, YAHOO_TICKER_MAP } from "@/lib/yahoo-service";
+import { fetchYahooQuotes, fetchYahooYTDData, YAHOO_TICKER_MAP, resolveSymbol } from "@/lib/yahoo-service";
 
 const GLOBAL_INDICES = [
-    { id: "NIKKEI", symbol: "^N225", name: "Nikkei 225", currency: "JPY" },
-    { id: "KOSPI", symbol: "^KS11", name: "KOSPI", currency: "KRW" },
-    { id: "CSI300", symbol: "000300.SS", name: "CSI 300", currency: "CNY" },
-    { id: "BIST100", symbol: "XU100.IS", name: "BIST 100", currency: "TRY" },
-    { id: "NASDAQ", symbol: "^IXIC", name: "NASDAQ", currency: "USD" },
-    { id: "SP500", symbol: "^GSPC", name: "S&P 500", currency: "USD" },
-    { id: "DOW", symbol: "^DJI", name: "Dow Jones", currency: "USD" },
-    { id: "CAC40", symbol: "^FCHI", name: "CAC 40", currency: "EUR" },
+    { id: "FTSEMIB", symbol: "FTSEMIB.MI", name: "FTSE MIB", currency: "EUR" },
     { id: "DAX", symbol: "^GDAXI", name: "DAX", currency: "EUR" },
+    { id: "CAC40", symbol: "^FCHI", name: "CAC 40", currency: "EUR" },
     { id: "FTSE100", symbol: "^FTSE", name: "FTSE 100", currency: "GBP" },
+    { id: "SP500", symbol: "^GSPC", name: "S&P 500", currency: "USD" },
+    { id: "NASDAQ", symbol: "^IXIC", name: "NASDAQ", currency: "USD" },
+    { id: "NIKKEI", symbol: "^N225", name: "Nikkei 225", currency: "JPY" },
 ];
 
 export async function GET() {
     try {
-        // Fetch exchange rates for adjustment
+        // Fetch global indices and FX rates in batches to minimize external calls
         const fxTickers = ["EURUSD", "JPYEUR", "KRWEUR", "CNYEUR", "TRYEUR", "GBPEUR"];
-        const fxData: Record<string, any> = {};
+        const indexSymbols = GLOBAL_INDICES.map(i => i.symbol);
+        
+        // Batch 1: All current quotes
+        const allQuotes = await fetchYahooQuotes([...fxTickers, ...indexSymbols]);
+        
+        const quoteMap: Record<string, any> = {};
+        allQuotes.forEach((q: any) => {
+            quoteMap[q.symbol] = q;
+        });
 
+        // Batch 2: FX YTD data (still individual for now, but prioritized)
+        const fxData: Record<string, any> = {};
         await Promise.all(fxTickers.map(async (ticker) => {
-            const quote = await fetchYahooQuote(ticker);
             const ytd = await fetchYahooYTDData(ticker);
-            fxData[ticker] = { current: quote?.price, start: ytd?.startPrice };
+            fxData[ticker] = { 
+                current: quoteMap[resolveSymbol(ticker)]?.price, 
+                start: ytd?.startPrice 
+            };
         }));
 
         const results = await Promise.all(GLOBAL_INDICES.map(async (index) => {
-            const quote = await fetchYahooQuote(index.symbol);
+            const quote = quoteMap[index.symbol];
             const ytd = await fetchYahooYTDData(index.symbol);
 
             if (!quote || !ytd) return null;
 
             let ytdAdjusted = ytd.changePercent;
 
-            // Adjust for EUR if not already EUR
             if (index.currency !== "EUR") {
                 const fxTicker = index.currency === "USD" ? "EURUSD" : `${index.currency}EUR`;
                 const fx = fxData[fxTicker];
 
                 if (fx && fx.current && fx.start) {
-                    // Growth adjusted for EUR: (Price_Now * FX_Now) / (Price_Start * FX_Start) - 1
-                    // Note: EURUSD is USD per EUR, so we need 1/Rate for EUR value if it's quoted as BASE/QUOTE
-                    // But our YAHOO_TICKER_MAP has EURUSD=X (USD per EUR) and JPYEUR=X (EUR per JPY?)
-                    // Let's verify: JPYEUR=X is usually EUR per JPY.
-
                     let currentInEur, startInEur;
 
                     if (index.currency === "USD") {
-                        // quote.price is in USD. Rate is USD per EUR. EUR = USD / Rate.
                         currentInEur = quote.price / fx.current;
                         startInEur = ytd.startPrice / fx.start;
                     } else {
-                        // Rate is EUR per Local. EUR = Price * Rate.
                         currentInEur = quote.price * fx.current;
                         startInEur = ytd.startPrice * fx.start;
                     }

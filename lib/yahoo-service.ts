@@ -1,7 +1,4 @@
-
-import YahooFinance from 'yahoo-finance2';
-// @ts-ignore - yahoo-finance2 v3 exports the class as default but types can be tricky
-const yahooFinance = new (YahooFinance as any)();
+import yahooFinance from 'yahoo-finance2';
 
 export const YAHOO_TICKER_MAP: Record<string, string> = {
     "ETFMIB": "FTSEMIB.MI",
@@ -61,11 +58,11 @@ export async function fetchYahooHistoricalData(ticker: string, periodDays: numbe
     startDate.setDate(endDate.getDate() - periodDays);
 
     try {
-        const result = await yahooFinance.chart(symbol, {
+        const result = (await yahooFinance.chart(symbol, {
             period1: startDate,
             period2: endDate,
             interval: interval as any
-        });
+        })) as any;
 
         const results = result.quotes;
         if (!results || results.length === 0) return [];
@@ -140,12 +137,33 @@ export async function fetchYahooQuotesBatch(tickers: string[]) {
     }
 }
 
+// Batch fetch quotes
+export async function fetchYahooQuotes(tickers: string[]) {
+    const symbols = tickers.map(resolveSymbol);
+    try {
+        const result = (await yahooFinance.quote(symbols)) as any;
+        // result is an array of quotes
+        return result.map((quote: any) => ({
+            symbol: quote.symbol,
+            price: quote.regularMarketPrice,
+            change: quote.regularMarketChange,
+            changePercent: quote.regularMarketChangePercent,
+            currency: quote.currency,
+            marketState: quote.marketState,
+            displayName: quote.displayName || quote.shortName || quote.symbol
+        }));
+    } catch (error) {
+        console.error(`Yahoo Batch Quotes error:`, error);
+        return [];
+    }
+}
+
 export async function searchYahooTicker(query: string) {
     try {
-        const result = await yahooFinance.search(query, {
+        const result = (await yahooFinance.search(query, {
             quotesCount: 1,
             newsCount: 0
-        });
+        })) as any;
         if (result.quotes && result.quotes.length > 0) {
             const bestMatch = result.quotes[0] as any;
             return {
@@ -167,11 +185,11 @@ export async function fetchYahooYTDData(ticker: string) {
     const startOfYear = new Date(now.getFullYear(), 0, 1);
 
     try {
-        const result = await yahooFinance.chart(symbol, {
+        const result = (await yahooFinance.chart(symbol, {
             period1: startOfYear,
             period2: now,
             interval: '1d'
-        });
+        })) as any;
 
         const quotes = result.quotes;
         if (!quotes || quotes.length === 0) return null;
@@ -196,10 +214,10 @@ export async function fetchYahooYTDData(ticker: string) {
 export async function fetchYahooNews(ticker: string) {
     const symbol = resolveSymbol(ticker);
     try {
-        const result = await yahooFinance.search(symbol, {
+        const result = (await yahooFinance.search(symbol, {
             newsCount: 5,
             quotesCount: 0
-        });
+        })) as any;
         return result.news || [];
     } catch (error) {
         console.error(`Yahoo News error for ${symbol}:`, error);

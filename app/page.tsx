@@ -36,7 +36,7 @@ const formatNumber = (val: number) => {
 
 export default function Home() {
   const [selectedPeriod, setSelectedPeriod] = useState<number | "YTD">(365);
-  const [selectedETF, setSelectedETF] = useState<ETF>(MOCK_ETFS[0]);
+  const [selectedETF, setSelectedETF] = useState<ETF>(MOCK_ETFS.find(e => e.id === "UCG.MI") || MOCK_ETFS[0]);
   const [zoomRange, setZoomRange] = useState<{ startIndex?: number; endIndex?: number }>({});
 
   // Custom Selection & Portfolio State
