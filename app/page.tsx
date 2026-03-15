@@ -215,7 +215,7 @@ export default function Home() {
       try {
         const response = await fetch(`/api/market-data?ticker=SPY&days=365&interval=1d`);
         const data = await response.json();
-        if (!data.error) setMarketBenchmarkData(data);
+        if (!data.error && Array.isArray(data) && data.length > 0) setMarketBenchmarkData(data);
       } catch (e) {
         console.error("Failed to fetch SPY benchmark", e);
       }
@@ -284,11 +284,16 @@ export default function Home() {
 
   // Clear old provider caches (one-time cleanup)
   useEffect(() => {
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('fmp_data_') || key.startsWith('eodhd_data_')) {
-        localStorage.removeItem(key);
-      }
-    });
+    // Versioned cleanup to force refresh after library fix
+    const CLEANUP_VERSION = "v3-fix";
+    if (localStorage.getItem("dashboard_cache_ver") !== CLEANUP_VERSION) {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('fmp_data_') || key.startsWith('eodhd_data_') || key.startsWith('yahoo_data_')) {
+          localStorage.removeItem(key);
+        }
+      });
+      localStorage.setItem("dashboard_cache_ver", CLEANUP_VERSION);
+    }
   }, []);
 
   // Fetch real data from our API proxy
@@ -324,8 +329,8 @@ export default function Home() {
         const response = await fetch(`/api/market-data?ticker=${selectedETF.id}&days=${days}&interval=${interval}`);
         const rawData = await response.json();
 
-        if (rawData.error) {
-          console.warn("API returned error, falling back to simulation:", rawData.error);
+        if (rawData.error || !Array.isArray(rawData) || rawData.length === 0) {
+          console.warn("API returned error or empty data, falling back to simulation:", rawData?.error || "Empty response");
           handleFallback();
           return;
         }
