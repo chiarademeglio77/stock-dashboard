@@ -33,6 +33,11 @@ export const YAHOO_TICKER_MAP: Record<string, string> = {
     "KOSPI": "^KS11",     // KOSPI Composite
     "VGK": "VGK",         // Vanguard FTSE Europe ETF
     "VUSA_US": "VOO",
+    "NASDAQ": "^IXIC",
+    "SP500": "^GSPC",
+    "DAX": "^GDAXI",
+    "CAC40": "^FCHI",
+    "FTSE100": "^FTSE",
     "EURUSD": "EURUSD=X",
     "EURGBP": "EURGBP=X",
     "EURCNY": "EURCNY=X",

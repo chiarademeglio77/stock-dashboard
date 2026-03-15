@@ -240,8 +240,12 @@ export function PriceChart({
                                     const tickers = Object.keys(comparisonDataMap);
                                     if (name === "Price" || tickers.includes(name)) {
                                         const originalPrice = name === "Price" ? props.payload.close : props.payload[`${name}_Value`];
-                                        const indicatorColors: any = { "SPY": "#f97316", "QQQ": "#14b8a6", "VGK": "#8b5cf6" };
-                                        const rotatingColors = ["#ef4444", "#10b981", "#3b82f6", "#f59e0b", "#6366f1"];
+                                        const indicatorColors: any = { 
+                                            "SPY": "#f97316", "QQQ": "#14b8a6", "VGK": "#8b5cf6",
+                                            "NASDAQ": "#3b82f6", "SP500": "#ef4444", "DAX": "#10b981", 
+                                            "CAC40": "#f59e0b", "FTSE100": "#6366f1"
+                                        };
+                                        const rotatingColors = ["#ec4899", "#8b5cf6", "#06b6d4", "#f97316", "#84cc16"];
 
                                         let color = "#1e40af"; // Default for Price
                                         if (name !== "Price") {
@@ -296,8 +300,12 @@ export function PriceChart({
                                         isAnimationActive={false}
                                     />
                                     {Object.keys(comparisonDataMap).map((ticker, idx) => {
-                                        const indicatorColors: any = { "SPY": "#f97316", "QQQ": "#14b8a6", "VGK": "#8b5cf6" };
-                                        const rotatingColors = ["#ef4444", "#10b981", "#3b82f6", "#f59e0b", "#6366f1"];
+                                        const indicatorColors: any = { 
+                                            "SPY": "#f97316", "QQQ": "#14b8a6", "VGK": "#8b5cf6",
+                                            "NASDAQ": "#3b82f6", "SP500": "#ef4444", "DAX": "#10b981", 
+                                            "CAC40": "#f59e0b", "FTSE100": "#6366f1"
+                                        };
+                                        const rotatingColors = ["#ec4899", "#8b5cf6", "#06b6d4", "#f97316", "#84cc16"];
                                         const color = indicatorColors[ticker] || rotatingColors[idx % rotatingColors.length];
 
                                         const periodLabel = selectedPeriod === "YTD" ? "YTD" : `${selectedPeriod}D`;

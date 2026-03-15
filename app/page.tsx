@@ -751,7 +751,7 @@ export default function Home() {
             <aside className="lg:col-span-1 flex flex-col space-y-6">
               <div className="space-y-2">
                 <h3 className="text-[10px] font-black text-secondary uppercase tracking-[0.3em] flex items-center gap-2 px-1">
-                  <Globe className="h-3 w-3" /> Market Vectors
+                  <Globe className="h-3 w-3" /> MARKET INDEXES
                 </h3>
                 <MarketOverview
                   activeComparisons={comparisonETFs}
