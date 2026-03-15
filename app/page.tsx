@@ -177,7 +177,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchQuotes() {
       try {
-        const response = await fetch('/api/market-data/batch');
+        const response = await fetch('/api/market-data/batch', { cache: 'no-store' });
         const quotes = await response.json();
 
         // Safety check: ensure 'quotes' is an array before calling reduce
@@ -213,7 +213,7 @@ export default function Home() {
     // Fetch SPY for market beta
     async function fetchMarketBenchmark() {
       try {
-        const response = await fetch(`/api/market-data?ticker=SPY&days=365&interval=1d`);
+        const response = await fetch(`/api/market-data?ticker=SPY&days=365&interval=1d`, { cache: 'no-store' });
         const data = await response.json();
         if (!data.error && Array.isArray(data) && data.length > 0) setMarketBenchmarkData(data);
       } catch (e) {
@@ -228,7 +228,7 @@ export default function Home() {
       const results: Record<string, number> = {};
       await Promise.all(fxTickers.map(async (ticker) => {
         try {
-          const res = await fetch(`/api/market-data?ticker=${ticker}&days=365&interval=1d`);
+          const res = await fetch(`/api/market-data?ticker=${ticker}&days=365&interval=1d`, { cache: 'no-store' });
           const raw = await res.json();
           if (Array.isArray(raw) && raw.length > 2) {
             const currentYear = new Date().getFullYear();
@@ -266,7 +266,7 @@ export default function Home() {
             ? Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (1000 * 60 * 60 * 24)) + 1
             : selectedPeriod;
 
-          const response = await fetch(`/api/market-data?ticker=${ticker}&days=${days}&interval=${interval}`);
+          const response = await fetch(`/api/market-data?ticker=${ticker}&days=${days}&interval=${interval}`, { cache: 'no-store' });
           const rawData = await response.json();
           if (!rawData.error) {
             newDataMap[ticker] = rawData;
@@ -326,7 +326,7 @@ export default function Home() {
           : selectedPeriod;
 
         const interval = days === 1 ? '5m' : '1d';
-        const response = await fetch(`/api/market-data?ticker=${selectedETF.id}&days=${days}&interval=${interval}`);
+        const response = await fetch(`/api/market-data?ticker=${selectedETF.id}&days=${days}&interval=${interval}`, { cache: 'no-store' });
         const rawData = await response.json();
 
         if (rawData.error || !Array.isArray(rawData) || rawData.length === 0) {
