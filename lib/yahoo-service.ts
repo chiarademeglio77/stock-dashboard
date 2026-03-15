@@ -29,14 +29,15 @@ export const YAHOO_TICKER_MAP: Record<string, string> = {
     "INRG": "INRG.MI",    // Clean Energy
     "HEAL": "HEAL.MI",    // Healthcare Innovation
     "GREC": "GREC",       // Global X Greece (US)
-    "NIKKEI": "^N225",    // Nikkei 225
+    "VUSA_US": "VOO",
     "KOSPI": "^KS11",     // KOSPI Composite
     "VGK": "VGK",         // Vanguard FTSE Europe ETF
-    "VUSA_US": "VOO",
-    "NASDAQ": "^IXIC",
     "SP500": "^GSPC",
     "DAX": "^GDAXI",
     "CAC40": "^FCHI",
+    "NASDAQ": "^IXIC",
+    "FTSEMIB": "FTSEMIB.MI",
+    "NIKKEI": "^N225",
     "FTSE100": "^FTSE",
     "EURUSD": "EURUSD=X",
     "EURGBP": "EURGBP=X",
