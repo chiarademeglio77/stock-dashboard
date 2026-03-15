@@ -91,8 +91,8 @@ export function MarketOverview({ onToggleComparison, activeComparisons = new Set
                             <span className="text-xl font-black tracking-tighter text-foreground">
                                 {index.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                             </span>
-                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded backdrop-blur-md ${index.changePercent >= 0 ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>
-                                {index.changePercent >= 0 ? "+" : ""}{index.changePercent.toFixed(2)}%
+                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded backdrop-blur-md ${index.changePercent.toFixed(2) === "0.00" ? "bg-muted/10 text-muted-foreground/60" : index.changePercent > 0 ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>
+                                {index.changePercent.toFixed(2) !== "0.00" && (index.changePercent > 0 ? "+" : "")}{index.changePercent.toFixed(2)}%
                             </span>
                         </div>
 

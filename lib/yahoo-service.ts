@@ -1,19 +1,12 @@
 import YahooFinance from 'yahoo-finance2';
+const yahooFinance = new YahooFinance();
 import { MOCK_ETFS } from './mock-etfs';
-import { generateHistoricalData } from './data-engine';const yahooFinance = new YahooFinance();
+import { generateHistoricalData } from './data-engine';
 
-// Define instance-specific chart options or headers if global config is restricted
-// Note: In some versions of v2/v3, config is on the class/package level
-const DEFAULT_OPTIONS = {
-    fetchOptions: {
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': '*/*',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive'
-        }
-    }
-};
+// The default export is already an instance in yahoo-finance2 v2
+
+// Remove complex headers that might be triggering bot detection
+const DEFAULT_OPTIONS = {};
 
 export const YAHOO_TICKER_MAP: Record<string, string> = {
     "ETFMIB": "FTSEMIB.MI",
@@ -122,6 +115,7 @@ export async function fetchYahooQuote(ticker: string) {
             symbol: ticker,
             name: quote.longName || quote.shortName || ticker,
             price: quote.regularMarketPrice,
+            open: quote.regularMarketOpen,
             changePercent: quote.regularMarketChangePercent,
             volume: quote.regularMarketVolume,
             high: quote.regularMarketDayHigh,
@@ -136,8 +130,8 @@ export async function fetchYahooQuote(ticker: string) {
                 symbol: symbol,
                 name: mockEtf.name,
                 price: mockEtf.price,
-                change: ((mockEtf.ytdChange || 5) / 100) * mockEtf.price,
-                changePercent: mockEtf.ytdChange || 5,
+                change: (mockEtf.changePercent / 100) * mockEtf.price,
+                changePercent: mockEtf.changePercent,
                 volume: 1000000,
                 high: mockEtf.price * 1.02,
                 low: mockEtf.price * 0.98
@@ -170,42 +164,59 @@ export async function fetchYahooQuotesBatch(tickers: string[]) {
 
     try {
         const results = await yahooFinance.quote(symbols, {}, DEFAULT_OPTIONS) as any[];
-        return results.map(quote => ({
-            symbol: reverseMap[quote.symbol] || quote.symbol,
-            name: quote.longName || quote.shortName || quote.symbol,
-            price: quote.regularMarketPrice,
-            change: quote.regularMarketChange,
-            changePercent: quote.regularMarketChangePercent,
-            volume: quote.regularMarketVolume
-        }));
+        const quoteMap: Record<string, any> = {};
+        
+        results.forEach(quote => {
+            const originalTicker = reverseMap[quote.symbol] || quote.symbol;
+            // Ensure we don't overwrite if multiple symbols mapped to same ticker, 
+            // but here we want to ensure we have the most specific one.
+            quoteMap[originalTicker] = {
+                symbol: originalTicker,
+                name: quote.longName || quote.shortName || quote.symbol,
+                price: quote.regularMarketPrice,
+                open: quote.regularMarketOpen,
+                change: quote.regularMarketChange,
+                changePercent: quote.regularMarketChangePercent,
+                volume: quote.regularMarketVolume,
+                high: quote.regularMarketDayHigh,
+                low: quote.regularMarketDayLow
+            };
+            
+            // Also store by the actual symbol returned by Yahoo
+            quoteMap[quote.symbol] = quoteMap[originalTicker];
+        });
+        
+        return quoteMap;
     } catch (error) {
         console.error("Yahoo Batch Quote error - Falling back to mock data:", error);
         
-        // Mock Fallback for Vercel IP blocks
-        return tickers.map(ticker => {
+        const quoteMap: Record<string, any> = {};
+        tickers.forEach(ticker => {
             const mockEtf = MOCK_ETFS.find(e => e.id === ticker);
             if (mockEtf) {
-                return {
+                quoteMap[ticker] = {
                     symbol: ticker,
                     name: mockEtf.name,
                     price: mockEtf.price,
-                    change: ((mockEtf.ytdChange || 5) / 100) * mockEtf.price,
-                    changePercent: mockEtf.ytdChange || 5,
+                    change: (mockEtf.changePercent / 100) * mockEtf.price,
+                    changePercent: mockEtf.changePercent,
                     volume: 1000000
                 };
+            } else {
+                // Generic mock for unknown tickers like EURUSD
+                const isCurrency = ticker.length === 6 && ticker.toUpperCase() === ticker;
+                const basePrice = isCurrency ? (Math.random() * 0.5 + 0.8) : (Math.random() * 200 + 50);
+                quoteMap[ticker] = {
+                    symbol: ticker,
+                    name: ticker,
+                    price: parseFloat(basePrice.toFixed(4)),
+                    change: parseFloat((Math.random() * 2 - 1).toFixed(4)),
+                    changePercent: parseFloat((Math.random() * 2 - 1).toFixed(2)),
+                    volume: Math.floor(Math.random() * 5000000)
+                };
             }
-            // Generic mock for unknown tickers like EURUSD
-            const isCurrency = ticker.length === 6 && ticker.toUpperCase() === ticker;
-            const basePrice = isCurrency ? (Math.random() * 0.5 + 0.8) : (Math.random() * 200 + 50);
-            return {
-                symbol: ticker,
-                name: ticker,
-                price: parseFloat(basePrice.toFixed(4)),
-                change: parseFloat((Math.random() * 2 - 1).toFixed(4)),
-                changePercent: parseFloat((Math.random() * 2 - 1).toFixed(2)),
-                volume: Math.floor(Math.random() * 5000000)
-            };
         });
+        return quoteMap;
     }
 }
 // Batch fetch quotes
@@ -231,8 +242,8 @@ export async function fetchYahooQuotes(tickers: string[]) {
                 return {
                     symbol: ticker,
                     price: mockEtf.price,
-                    change: ((mockEtf.ytdChange || 5) / 100) * mockEtf.price,
-                    changePercent: mockEtf.ytdChange || 5,
+                    change: (mockEtf.changePercent / 100) * mockEtf.price,
+                    changePercent: mockEtf.changePercent,
                     currency: "EUR",
                     marketState: "REGULAR",
                     displayName: mockEtf.name

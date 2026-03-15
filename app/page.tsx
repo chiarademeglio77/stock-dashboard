@@ -164,14 +164,52 @@ export default function Home() {
   const [realQuotes, setRealQuotes] = useState<Record<string, any>>({});
   const [fxYtdData, setFxYtdData] = useState<Record<string, number>>({});
 
+  const syncedData = useMemo(() => {
+    if (!data || data.length === 0) return data;
+    const realQuote = realQuotes[selectedETF.id];
+    if (!realQuote || !realQuote.price) return data;
+
+    // Only patch/append if it's the 1d interval or lower
+    const days = selectedPeriod === "YTD" ? 365 : selectedPeriod;
+    if (typeof days === 'number' && days > 365) return data;
+
+    const lastPoint = data[data.length - 1];
+    // Use en-CA for YYYY-MM-DD format regardless of locale
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const lastPointDate = lastPoint.date.split('T')[0];
+
+    const newData = [...data];
+
+    if (lastPointDate === todayStr) {
+      // Patch today's data
+      newData[newData.length - 1] = {
+        ...lastPoint,
+        close: realQuote.price,
+        high: Math.max(lastPoint.high || 0, realQuote.high || realQuote.price),
+        low: Math.min(lastPoint.low || realQuote.price, realQuote.low || realQuote.price),
+      };
+    } else if (new Date(lastPointDate) < new Date(todayStr)) {
+      // Append today's data if it's missing (e.g. historical data ends at last close)
+      newData.push({
+        date: todayStr,
+        open: realQuote.open || realQuote.price,
+        high: realQuote.high || realQuote.price,
+        low: realQuote.low || realQuote.price,
+        close: realQuote.price,
+        volume: realQuote.volume || 0,
+      });
+    }
+    return newData;
+  }, [data, realQuotes, selectedETF.id, selectedPeriod]);
+
   const ytdPerformance = useMemo(() => {
-    if (!data || data.length < 2) return 0;
+    if (!syncedData || syncedData.length < 2) return 0;
     const currentYear = new Date().getFullYear();
     // Find the first price of the current year from the available data
-    const firstOfYear = data.find(d => new Date(d.date).getFullYear() === currentYear);
+    const firstOfYear = syncedData.find(d => new Date(d.date).getFullYear() === currentYear);
     if (!firstOfYear) return 0;
-    return ((data[data.length - 1].close / firstOfYear.close) - 1) * 100;
-  }, [data]);
+    return ((syncedData[syncedData.length - 1].close / firstOfYear.close) - 1) * 100;
+  }, [syncedData]);
 
   // Fetch all real quotes for the table, depending on customEtfs length
   useEffect(() => {
@@ -182,11 +220,8 @@ export default function Home() {
         const quotes = await response.json();
 
         // Safety check: ensure 'quotes' is an array before calling reduce
-        if (Array.isArray(quotes)) {
-          const quotesMap = quotes.reduce((acc: any, q: any) => {
-            acc[q.symbol] = q;
-            return acc;
-          }, {});
+        if (quotes && quotes.quotes && typeof quotes.quotes === 'object') {
+          const quotesMap = quotes.quotes;
           setRealQuotes(quotesMap);
 
           // Update customEtfs names if they are currently just the ticker
@@ -194,16 +229,18 @@ export default function Home() {
             let changed = false;
             const updated = prev.map(etf => {
               const q = quotesMap[etf.id];
-              if (q && q.name && etf.name !== q.name) {
+              // Note: our API now returns 'displayName' or 'name'
+              const remoteName = q?.displayName || q?.name;
+              if (q && remoteName && etf.name !== remoteName) {
                 changed = true;
-                return { ...etf, name: q.name };
+                return { ...etf, name: remoteName };
               }
               return etf;
             });
             return changed ? updated : prev;
           });
         } else {
-          console.warn("Batch quotes API did not return an array:", quotes);
+          console.warn("Batch quotes API did not return the expected structure:", quotes);
         }
       } catch (err) {
         console.error("Failed to fetch batch quotes:", err);
@@ -211,10 +248,10 @@ export default function Home() {
     }
     fetchQuotes();
 
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchQuotes, 5 * 60 * 1000);
+    // Refresh every 20 seconds for near real-time updates
+    const interval = setInterval(fetchQuotes, 20 * 1000);
     return () => clearInterval(interval);
-  }, [customEtfs]); // Re-run and set interval if customEtfs change
+  }, [customEtfs]);
 
   // Fetch One-Time Market benchmark and FX YTD
   useEffect(() => {
@@ -380,7 +417,7 @@ export default function Home() {
       setIsSimulation(true);
       // Fallback to mock data on error so the app doesn't crash
       let days = selectedPeriod === "YTD" ? 365 : selectedPeriod;
-      const mockData = generateHistoricalData(days);
+      const mockData = generateHistoricalData(days, selectedETF.startOfYearPrice || 150.0);
       const sma = calculateSMA(mockData, 20);
       const ema = calculateEMA(mockData, 50);
       const ema200 = calculateEMA(mockData, 200);
@@ -450,9 +487,9 @@ export default function Home() {
       // Note: Individual beta/vol calculation here is simplified
       // In a real app, we'd fetch historical data for each asset
       // For now, we'll use a placeholder or calculate if we have data for the current asset
-      if (item.id === selectedETF.id && data.length > 2) {
-        const beta = calculateBeta(data, marketBenchmarkData);
-        const vol = calculateVolatility(data);
+      if (item.id === selectedETF.id && syncedData.length > 2) {
+        const beta = calculateBeta(syncedData, marketBenchmarkData);
+        const vol = calculateVolatility(syncedData);
         weightedBeta += beta * value;
         weightedVol += vol * value;
       } else {
@@ -467,13 +504,13 @@ export default function Home() {
       beta: weightedBeta / totalValue,
       volatility: weightedVol / totalValue
     };
-  }, [portfolio, selectedETF, data, marketBenchmarkData, realQuotes, customEtfs]);
+  }, [portfolio, selectedETF, syncedData, marketBenchmarkData, realQuotes, customEtfs]);
 
   const handleExportCSV = () => {
-    if (!data || data.length === 0) return;
+    if (!syncedData || syncedData.length === 0) return;
 
     const headers = ["Date", "Open", "High", "Low", "Close", "Volume", "SMA", "EMA", "RSI", "MACD"];
-    const rows = data.map(d => [
+    const rows = syncedData.map(d => [
       d.date,
       d.open.toFixed(2),
       d.high.toFixed(2),
@@ -544,8 +581,9 @@ export default function Home() {
                     {quote.price.toFixed(4)}
                   </p>
                   <div className="flex items-center justify-center gap-1.5 mt-1 border-t border-border/20 pt-1 w-full">
-                    <span className={`text-[9px] font-black ${quote.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {quote.changePercent >= 0 ? '+' : ''}{quote.changePercent?.toFixed(2)}%
+                    <span className={`text-[9px] font-black ${quote.changePercent.toFixed(2) === '0.00' ? 'text-muted-foreground' : quote.changePercent > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {quote.changePercent.toFixed(2) !== '0.00' && (quote.changePercent > 0 ? '+' : '')}
+                      {quote.changePercent?.toFixed(2)}%
                     </span>
                     {ytd !== undefined && (
                       <>
@@ -627,7 +665,7 @@ export default function Home() {
                     </div>
                   )}
                   <PriceChart
-                    data={data}
+                    data={syncedData}
                     startIndex={zoomRange.startIndex}
                     endIndex={zoomRange.endIndex}
                     onZoomChange={(range) => setZoomRange(range)}
@@ -736,7 +774,7 @@ export default function Home() {
 
           {/* Bottom Section: Unified Analytics (Full 9-col width) */}
           <div className="flex flex-col space-y-6">
-            <PortfolioPerformanceChart portfolio={portfolio} etfs={[...MOCK_ETFS, ...customEtfs]} />
+            <PortfolioPerformanceChart portfolio={portfolio} etfs={[...MOCK_ETFS, ...customEtfs]} realQuotes={realQuotes} />
 
             <PortfolioTable
               etfs={[...MOCK_ETFS, ...customEtfs]}
@@ -754,7 +792,7 @@ export default function Home() {
                     <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                     <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Backtest Engine</h3>
                   </div>
-                  <BacktestingTool data={data} ticker={selectedETF.id} />
+                  <BacktestingTool data={syncedData} ticker={selectedETF.id} />
                 </div>
 
                 <div className="space-y-4">

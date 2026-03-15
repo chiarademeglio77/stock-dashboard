@@ -18,10 +18,15 @@ interface ETFTableProps {
 }
 
 function ChangeCell({ value }: { value: number }) {
-    const isPos = value >= 0;
+    const roundedValue = value.toFixed(2);
+    const isActuallyZero = roundedValue === "0.00" || roundedValue === "-0.00";
+    const isPos = !isActuallyZero && value > 0;
+    const isNeg = !isActuallyZero && value < 0;
+    
     return (
-        <span className={`flex items-center gap-0.5 font-bold text-xs ${isPos ? "text-green-500" : "text-red-500"}`}>
-            {isPos ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+        <span className={`flex items-center gap-0.5 font-bold text-xs ${isPos ? "text-green-500" : isNeg ? "text-red-500" : "text-muted-foreground/60"}`}>
+            {isPos && <ArrowUp className="h-3 w-3" />}
+            {isNeg && <ArrowDown className="h-3 w-3" />}
             {Math.abs(value).toFixed(2)}%
         </span>
     );
@@ -31,8 +36,8 @@ const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "EUR",
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
     }).format(val);
 };
 

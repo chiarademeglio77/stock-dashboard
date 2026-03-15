@@ -12,8 +12,16 @@ interface MetricsCardProps {
 }
 
 export function MetricsCard({ title, value, change, changeLabel, secondaryChange, secondaryLabel, icon }: MetricsCardProps) {
-    const isPositive = change && change >= 0;
-    const isSecondaryPositive = secondaryChange && secondaryChange >= 0;
+    const changeVal = change?.toFixed(2);
+    const secondaryChangeVal = secondaryChange?.toFixed(2);
+
+    const isZero = change === undefined || changeVal === "0.00";
+    const isPositive = !isZero && change! > 0;
+    const isNegative = !isZero && change! < 0;
+
+    const isSecondaryZero = secondaryChange === undefined || secondaryChangeVal === "0.00";
+    const isSecondaryPositive = !isSecondaryZero && secondaryChange! > 0;
+    const isSecondaryNegative = !isSecondaryZero && secondaryChange! < 0;
 
     return (
         <div className="glass-card p-6 hover:border-primary/50 transition-all group overflow-hidden relative">
@@ -29,8 +37,9 @@ export function MetricsCard({ title, value, change, changeLabel, secondaryChange
                 <div className="flex gap-4 mt-2">
                     {change !== undefined && (
                         <p className="text-xs flex items-center">
-                            <span className={`flex items-center gap-1 font-bold px-1.5 py-0.5 rounded ${isPositive ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                                {isPositive ? <ArrowUp className="h-2.5 w-2.5" /> : <ArrowDown className="h-2.5 w-2.5" />}
+                            <span className={`flex items-center gap-1 font-bold px-1.5 py-0.5 rounded ${isZero ? 'bg-muted/10 text-muted-foreground/60' : isPositive ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                {isPositive && <ArrowUp className="h-2.5 w-2.5" />}
+                                {isNegative && <ArrowDown className="h-2.5 w-2.5" />}
                                 {Math.abs(change).toFixed(2)}%
                             </span>
                             <span className="ml-1.5 text-[8px] text-muted-foreground font-medium uppercase tracking-wider">{changeLabel}</span>
@@ -38,7 +47,9 @@ export function MetricsCard({ title, value, change, changeLabel, secondaryChange
                     )}
                     {secondaryChange !== undefined && (
                         <p className="text-xs flex items-center border-l border-border/20 pl-4">
-                            <span className={`flex items-center gap-1 font-bold px-1.5 py-0.5 rounded ${isSecondaryPositive ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                            <span className={`flex items-center gap-1 font-bold px-1.5 py-0.5 rounded ${isSecondaryZero ? 'bg-muted/10 text-muted-foreground/60' : isSecondaryPositive ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                {isSecondaryPositive && "+"}
+                                {isSecondaryNegative && "-"}
                                 {Math.abs(secondaryChange).toFixed(2)}%
                             </span>
                             <span className="ml-1.5 text-[8px] text-primary/60 font-medium uppercase tracking-wider">{secondaryLabel}</span>

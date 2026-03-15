@@ -19,7 +19,14 @@ export async function GET(request: NextRequest) {
 
     try {
         const quotes = await fetchYahooQuotesBatch(tickers);
-        return NextResponse.json(quotes);
+        return NextResponse.json({
+            quotes,
+            timestamp: new Date().toISOString()
+        }, {
+            headers: {
+                'Cache-Control': 'no-store, max-age=0',
+            }
+        });
     } catch (error: any) {
         console.error("Batch quote fetch error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });

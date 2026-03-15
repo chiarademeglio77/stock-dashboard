@@ -236,14 +236,14 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                                     <td className="px-4 py-4 text-right font-bold text-sm bg-blue-100/30 text-blue-900 tracking-tight">
                                         {formatCurrency(item.quantity * currentPrice)}
                                     </td>
-                                    <td className={`px-4 py-4 text-right font-bold text-sm ${dailyChangePercent >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                        {dailyChangePercent >= 0 ? "+" : ""}{dailyChangePercent.toFixed(2)}%
+                                    <td className={`px-4 py-4 text-right font-bold text-sm ${dailyChangePercent.toFixed(2) === "0.00" ? "text-muted-foreground" : dailyChangePercent > 0 ? "text-green-600" : "text-red-600"}`}>
+                                        {dailyChangePercent.toFixed(2) !== "0.00" && (dailyChangePercent > 0 ? "+" : "")}{dailyChangePercent.toFixed(2)}%
                                     </td>
-                                    <td className={`px-4 py-4 text-right font-semibold text-sm ${dailyChangeValue >= 0 ? "text-green-500" : "text-red-500"}`}>
-                                        {dailyChangeValue >= 0 ? "+" : ""}{formatCurrency(dailyChangeValue)}
+                                    <td className={`px-4 py-4 text-right font-semibold text-sm ${dailyChangeValue.toFixed(2) === "0.00" ? "text-muted-foreground" : dailyChangeValue > 0 ? "text-green-500" : "text-red-500"}`}>
+                                        {dailyChangeValue.toFixed(2) !== "0.00" && (dailyChangeValue > 0 ? "+" : "")}{formatCurrency(Math.abs(dailyChangeValue))}
                                     </td>
-                                    <td className={`px-4 py-4 text-right font-bold text-sm whitespace-nowrap bg-slate-50/50 ${totalProfitValue >= 0 ? "text-green-600 shadow-[inset_0_0_10px_rgba(22,163,74,0.05)]" : "text-red-600 shadow-[inset_0_0_10px_rgba(220,38,38,0.05)]"}`}>
-                                        {totalProfitValue >= 0 ? "+" : ""}{formatCurrency(totalProfitValue)}
+                                    <td className={`px-4 py-4 text-right font-bold text-sm whitespace-nowrap bg-slate-50/50 ${totalProfitValue.toFixed(2) === "0.00" ? "text-muted-foreground" : totalProfitValue > 0 ? "text-green-600 shadow-[inset_0_0_10px_rgba(22,163,74,0.05)]" : "text-red-600 shadow-[inset_0_0_10px_rgba(220,38,38,0.05)]"}`}>
+                                        {totalProfitValue.toFixed(2) !== "0.00" && (totalProfitValue > 0 ? "+" : "")}{formatCurrency(Math.abs(totalProfitValue))}
                                     </td>
                                     <td className="px-4 py-4 text-left text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-tight">
                                         {etf?.sector || "—"}
@@ -312,11 +312,11 @@ export function PortfolioTable({ etfs, realQuotes, portfolio, onUpdateItem, onRe
                                     <span>{formatCurrency(totals.marketValue)}</span>
                                 </td>
                                 <td className="px-4 py-5 font-mono text-center text-muted-foreground/40 text-[10px]">—</td>
-                                <td className={`px-4 py-5 text-right text-sm ${totals.dailyChange >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                    <span>{totals.dailyChange >= 0 ? "+" : ""}{formatCurrency(totals.dailyChange)}</span>
+                                <td className={`px-4 py-5 text-right text-sm ${totals.dailyChange.toFixed(2) === "0.00" ? "text-muted-foreground" : totals.dailyChange > 0 ? "text-green-600" : "text-red-600"}`}>
+                                    <span>{totals.dailyChange.toFixed(2) !== "0.00" && (totals.dailyChange > 0 ? "+" : "")}{formatCurrency(Math.abs(totals.dailyChange))}</span>
                                 </td>
-                                <td className={`px-4 py-5 text-right text-sm ${totals.totalProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                    <span>{totals.totalProfit >= 0 ? "+" : ""}{formatCurrency(totals.totalProfit)}</span>
+                                <td className={`px-4 py-5 text-right text-sm ${totals.totalProfit.toFixed(2) === "0.00" ? "text-muted-foreground" : totals.totalProfit > 0 ? "text-green-600" : "text-red-600"}`}>
+                                    <span>{totals.totalProfit.toFixed(2) !== "0.00" && (totals.totalProfit > 0 ? "+" : "")}{formatCurrency(Math.abs(totals.totalProfit))}</span>
                                 </td>
                                 <td colSpan={6} className="bg-primary/5"></td>
                             </tr>

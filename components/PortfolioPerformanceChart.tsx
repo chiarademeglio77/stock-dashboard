@@ -16,6 +16,7 @@ interface PortfolioItem {
 interface PortfolioPerformanceChartProps {
     portfolio: PortfolioItem[];
     etfs: ETF[];
+    realQuotes?: Record<string, any>;
 }
 
 const COLORS = [
@@ -31,7 +32,7 @@ const COLORS = [
     "#84cc16", // lime-500
 ];
 
-export function PortfolioPerformanceChart({ portfolio, etfs }: PortfolioPerformanceChartProps) {
+export function PortfolioPerformanceChart({ portfolio, etfs, realQuotes = {} }: PortfolioPerformanceChartProps) {
     const [historicalData, setHistoricalData] = useState<Record<string, any[]>>({});
     const [loading, setLoading] = useState(false);
 
@@ -97,6 +98,9 @@ export function PortfolioPerformanceChart({ portfolio, etfs }: PortfolioPerforma
             }
         });
 
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        allDatesSet.add(todayStr);
+
         const sortedDates = Array.from(allDatesSet).sort();
 
         // Track last price to fill gaps (e.g., weekends)
@@ -122,6 +126,12 @@ export function PortfolioPerformanceChart({ portfolio, etfs }: PortfolioPerforma
                 // Update last price if data exists for this day
                 if (dayData && dayData.close !== undefined && dayData.close !== null) {
                     lastPrices[item.id] = Number(dayData.close);
+                }
+
+                // Patch with real-time price if this is the last date and we have a quote
+                const isLastDate = date === sortedDates[sortedDates.length - 1];
+                if (isLastDate && realQuotes[item.id]) {
+                    lastPrices[item.id] = realQuotes[item.id].price;
                 }
 
                 const currentPrice = lastPrices[item.id];
@@ -156,7 +166,7 @@ export function PortfolioPerformanceChart({ portfolio, etfs }: PortfolioPerforma
 
             return dataPoint;
         });
-    }, [portfolio, historicalData]);
+    }, [portfolio, historicalData, realQuotes]);
 
     useEffect(() => {
         if (chartData.length > 0) {
